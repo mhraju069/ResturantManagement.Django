@@ -8,7 +8,7 @@ class SignUpSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['email', 'name', 'password', 'confirm_password']
+        fields = ['email', 'firstName', 'lastName','address','phone', 'password', 'confirm_password']
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -21,7 +21,10 @@ class SignUpSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = User.objects.create_user(
             email=validated_data['email'],
-            name=validated_data.get('name', ''),
+            firstName=validated_data.get('firstName', ''),
+            lastName=validated_data.get('lastName', ''),
+            address=validated_data.get('address', ''),
+            phone=validated_data.get('phone', ''),
             password=validated_data['password']
         )
         return user
@@ -120,13 +123,13 @@ class ResetPasswordSerializer(serializers.Serializer):
         confirm_password = attrs.get('confirm_password')
 
         if new_password != confirm_password:
-            raise serializers.ValidationError({"status":False,"log":"Passwords do not match."})
+            raise serializers.ValidationError({"status":False,"message":"Passwords do not match."})
         
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise serializers.ValidationError({"status":False,"log":"User not found"})
+            raise serializers.ValidationError({"status":False,"message":"User not found"})
 
         user.set_password(new_password)
         user.save()
-        return {"status": True, "log": "Password reset successfully"}
+        return {"status": True, "message": "Password reset successfully"}
