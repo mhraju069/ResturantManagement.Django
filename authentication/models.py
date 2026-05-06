@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from django.conf import settings
-import random,uuid
+import random,uuid,string
 from datetime import timedelta
 from django.utils import timezone
 
@@ -39,8 +39,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(max_length=255,unique=True,verbose_name="User Email")
-    name = models.CharField(max_length=200, blank=True, null=True,verbose_name="User Name")
+    firstName = models.CharField(max_length=200, blank=True, null=True,verbose_name="First Name")
+    lastName = models.CharField(max_length=200, blank=True, null=True,verbose_name="Last Name")
+    phone = models.CharField(max_length=15, unique=True, verbose_name="Phone Number", null=True, blank=True)
     image = models.ImageField(upload_to='profile_images/', blank=True, null=True,)
+    address = models.CharField(max_length=200, blank=True, null=True,verbose_name="Address")
     role = models.CharField(max_length=10, choices=ROLE, default='user',verbose_name="User Role")
     is_active = models.BooleanField(default=False,verbose_name="Active User")
     is_staff = models.BooleanField(default=False,verbose_name="Staff User")
@@ -91,7 +94,7 @@ class OTP(models.Model):
 
     @staticmethod
     def generate_otp(user):
-        otp_code = str(random.randint(1000, 9999))
+        otp_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
         return OTP.objects.create(user=user, otp=otp_code)
 
     def is_expired(self):

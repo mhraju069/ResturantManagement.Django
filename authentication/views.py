@@ -22,7 +22,8 @@ class SignUpView(generics.CreateAPIView):
         refresh = RefreshToken.for_user(user)
         return Response({
             "status": True,
-            "log": UserProfileSerializer(user).data,
+            "message": "Registration successful.",
+            "data": UserProfileSerializer(user).data,
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }, status=status.HTTP_201_CREATED)
@@ -39,7 +40,8 @@ class SignInView(generics.CreateAPIView):
         refresh = RefreshToken.for_user(user)
         return Response({
             "status": True,
-            "log": UserProfileSerializer(user).data,
+            "message": "Login successful.",
+            "data": UserProfileSerializer(user).data,
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }, status=status.HTTP_200_OK)
@@ -77,11 +79,13 @@ class OtpVerifyView(generics.GenericAPIView):
             try:
                 user = User.objects.get(email=request.data.get('email'))
             except User.DoesNotExist:
-                return Response({"status": False,"log": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"status": False,"message": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
             refresh = RefreshToken.for_user(user)
             return Response({
-                "log": UserProfileSerializer(user).data,
+                "status": True,
+                "message": "OTP verified successfully.",
+                "data": UserProfileSerializer(user).data,
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
             }, status=status.HTTP_200_OK)
@@ -106,5 +110,5 @@ class GetProfileView(APIView):
     
     def get(self, request):
         user = UserProfileSerializer(request.user,context={"request": request}).data
-        return Response({"status": True, "log": user}, status=200)
+        return Response({"status": True, "data": user}, status=200)
 
