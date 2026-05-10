@@ -23,6 +23,7 @@ class CheckoutSerializer(serializers.Serializer):
 
 class PaymentIntentSerializer(serializers.Serializer):
     payment_method_id = serializers.CharField(max_length=255, required=True)
+    coupon = serializers.CharField(max_length=20, required=False)
     first_name = serializers.CharField(max_length=200,required=True)
     last_name = serializers.CharField(max_length=200,required=True)
     address = serializers.CharField(max_length=250, required=True)
