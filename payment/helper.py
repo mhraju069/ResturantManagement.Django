@@ -4,6 +4,9 @@ from django.conf import settings
 from django.urls import reverse
 stripe.api_key = settings.STRIPE_SECRET_KEY
 from order.serializers import OrderSerializer
+from .models import *
+from product.models import ProductCart, CartItems
+
 
 
 def create_checkout_session(request, payment , price ):
@@ -54,8 +57,6 @@ def create_checkout_session(request, payment , price ):
     return session.url
 
 
-from .models import Payments
-from product.models import ProductCart, CartItems
 
 def Place_order(data, request):
     user = request.user
@@ -78,7 +79,7 @@ def Place_order(data, request):
             'price': item.food_item.price
         })
 
-    data['total_amount'] = float(total_amount)
+    data['total_amount'] = final_price(request,total_amount,data['cupon'])
     data['user'] = user.id
     data['order_items'] = order_items_data
 
@@ -90,6 +91,47 @@ def Place_order(data, request):
         return {"status": True, "order": order}
     else:
         return {"status": False, "errors": serializer.errors}
+
+
+
+
+def final_price(request,total_amount,code=None):
+    price = total_amount
+
+    cupon = Coupon.objects.filter(code=code).first()
+    applied = ApplyCoupon.objects.filter(user=request.user, cupon=cupon).first()
+
+    #Apply cupon if not applied and cupon is present
+
+    if not applied and cupon:
+        if cupon.discount_type == "fixed":
+            amount = cupon.discount_value
+        else:
+            amount = price * cupon.discount_value / 100
+
+        price -= amount
+        print("Cupon applied: ", cupon.code, amount)
+
+        ApplyCoupon.objects.create(user=request.user,cupon=cupon,amount=amount)
+
+
+    #Apply other charges
+
+    charges = Charges.objects.filter(active=True)
+
+    total_charges = 0
+
+    for charge in charges:
+        if charge.charge_type == "fixed":
+            total_charges += charge.value
+        else:
+            total_charges += price * charge.value / 100
+        print("Charge applied: ", charge.name)
+        
+            
+    final_price = price + total_charges
+    
+    return final_price
 
 
 
@@ -152,3 +194,6 @@ def Create_payment_intent(data, request, order):
             "status": False,
             "message": f"Error: {str(e)}", 
         }
+
+
+   

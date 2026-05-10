@@ -6,4 +6,3 @@ class OrderApiView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    
