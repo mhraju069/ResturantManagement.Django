@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Varivo - Production Ready Payment</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-align: center;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle { text-align: center; color: var(--text-muted); margin-bottom: 32px; font-size: 14px; }
+
+        .form-group { margin-bottom: 20px; }
+
+        label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px; color: var(--text-muted); }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+        }
+
+        #card-element {
+            padding: 14px;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 20px;
+        }
+
+        button:hover { background: var(--primary-hover); transform: translateY(-1px); }
+
+        .status-box {
+            margin-top: 24px;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            display: none;
+            white-space: pre-wrap;
+        }
+
+        .status-success { background: rgba(34, 197, 94, 0.1); color: var(--success); border: 1px solid rgba(34, 197, 94, 0.2); display: block; }
+        .status-error { background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid rgba(239, 68, 68, 0.2); display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Secure Payment</h1>
+        <p class="subtitle">Production workflow with Stripe Elements</p>
+
+        <form id="paymentForm">
+            <div class="form-group">
+                <label>Access Token (JWT)</label>
+                <input type="text" id="token" placeholder="Paste your Bearer token here" required>
+            </div>
+
+            <div class="form-group">
+                <label>Card Holder Name</label>
+                <input type="text" id="card_holder_name" value="John Doe" required>
+            </div>
+
+            <div class="form-group">
+                <label>Credit or Debit Card</label>
+                <div id="card-element"></div>
+                <div id="card-errors" role="alert" style="color: var(--error); font-size: 12px; margin-top: 8px;"></div>
+            </div>
+
+            <button type="submit" id="submitBtn">Pay Securely</button>
+        </form>
+
+        <div id="statusBox" class="status-box"></div>
+    </div>
+
+    <script>
+        // Use the dynamically injected key from Django settings
+        const stripe = Stripe('{{ publishable_key }}'); 
+        const elements = stripe.elements();
+
+        const style = {
+            base: {
+                color: "#ffffff",
+                fontFamily: 'Inter, sans-serif',
+                fontSmoothing: "antialiased",
+                fontSize: "16px",
+                "::placeholder": { color: "#94a3b8" }
+            },
+            invalid: { color: "#ef4444", iconColor: "#ef4444" }
+        };
+
+        const card = elements.create("card", { style: style });
+        card.mount("#card-element");
+
+        card.on('change', ({error}) => {
+            const displayError = document.getElementById('card-errors');
+            displayError.textContent = error ? error.message : '';
+        });
+
+        const form = document.getElementById('paymentForm');
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const statusBox = document.getElementById('statusBox');
+            
+            btn.disabled = true;
+            btn.innerText = 'Creating Payment Method...';
+            statusBox.style.display = 'none';
+
+            const cardHolderName = document.getElementById('card_holder_name').value;
+
+            // Step 1: Create Payment Method via Stripe.js
+            const {paymentMethod, error} = await stripe.createPaymentMethod({
+                type: 'card',
+                card: card,
+                billing_details: { name: cardHolderName }
+            });
+
+            if (error) {
+                statusBox.className = 'status-box status-error';
+                statusBox.innerText = error.message;
+                btn.disabled = false;
+                btn.innerText = 'Pay Securely';
+                statusBox.style.display = 'block';
+                return;
+            }
+
+            // Step 2: Send payment_method_id to backend
+            btn.innerText = 'Processing Order...';
+            const token = document.getElementById('token').value;
+            const data = {
+                payment_method_id: paymentMethod.id,
+                first_name: "John",
+                last_name: "Doe",
+                address: "123 Demo St",
+                city: "Demo City",
+                state: "Demo State",
+                zip_code: "123456",
+                phone: "01234567890",
+                email: "demo@example.com"
+            };
+
+            try {
+                const response = await fetch('/payment/api/v1/place-order/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.status) {
+                    statusBox.className = 'status-box status-success';
+                    statusBox.innerText = `Success! ${result.message}\nPayment ID: ${result.payment_id}`;
+                } else {
+                    statusBox.className = 'status-box status-error';
+                    statusBox.innerText = `Error: ${result.message || JSON.stringify(result.errors, null, 2)}`;
+                }
+            } catch (err) {
+                statusBox.className = 'status-box status-error';
+                statusBox.innerText = `Network Error: ${err.message}`;
+            } finally {
+                statusBox.style.display = 'block';
+                btn.disabled = false;
+                btn.innerText = 'Pay Securely';
+            }
+        });
+    </script>
+</body>
+</html>

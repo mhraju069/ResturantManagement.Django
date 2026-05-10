@@ -1,5 +1,4 @@
-import stripe
-import json
+import stripe,json
 from django.conf import settings
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -10,7 +9,7 @@ from rest_framework import status, generics
 from .models import Payments
 from subscription.models import Plan, Subscriptions
 from .serializers import *
-from .helper import create_checkout_session
+from .helper import *
 from rest_framework.permissions import IsAuthenticated
 # Create your views here.
 
@@ -51,15 +50,60 @@ class GetPaymentLinkView(generics.GenericAPIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+
+class PlaceOrderView(generics.GenericAPIView):
+    serializer_class = PaymentIntentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                "status": False,
+                "message": "Please provide correct information", 
+                "errors": serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+        order_result = Place_order(serializer.validated_data, request)
+
+        if not order_result["status"]:
+            return Response(order_result, status=status.HTTP_400_BAD_REQUEST)
+        order = order_result["order"]
+        
+        create_payment = Create_payment_intent(serializer.validated_data, request, order)
+
+        if not create_payment["status"]:
+            return Response(create_payment, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            "status": True,
+            "message": "Payment completed successfully",
+            "payment_id": create_payment.get("payment_id"),
+            "client_secret": create_payment.get("client_secret")
+        })
+
+
+
 class PaymentSuccessView(APIView):
     permission_classes = []
     def get(self, request):
-        return Response({"message": "Payment successful! Your subscription is activated."})
+        return Response({"message": "Payment successful! Your order is placed."})
 
 class PaymentCancelView(APIView):
     permission_classes = []
     def get(self, request):
         return Response({"message": "Payment cancelled."})
+
+from django.shortcuts import render
+class PaymentDemoView(APIView):
+    permission_classes = []
+    def get(self, request):
+        context = {
+            "publishable_key": settings.STRIPE_PUBLIC_KEY
+        }
+        return render(request, 'payment_demo.html', context)
 
 
 
@@ -183,16 +227,11 @@ class StripeWebhookView(APIView):
                     payment.invoice = invoice_url
                     payment.save()
                     
-                    # Deactivate existing active subscriptions for this user
-                    Subscriptions.objects.filter(user=payment.user, active=True).update(active=False)
-                    
-                    # Create/Activate new subscription
-                    Subscriptions.objects.create(
-                        user=payment.user,
-                        plan=payment.plan,
-                        active=True
-                    )
-                    print(f"Subscription activated: User {payment.user.email} | Plan {payment.plan.name}")
+                    # Handle Order if present
+                    if payment.order:
+                        payment.order.status = 'paid'
+                        payment.order.save()
+                        print(f"Order {payment.order.id} marked as paid via webhook.")
                     
                 except Exception as e:
                     print(f"Database update error: {str(e)}")
