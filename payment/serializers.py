@@ -19,8 +19,15 @@ class CheckoutSerializer(serializers.Serializer):
             return plan
         except Plan.DoesNotExist:
             raise serializers.ValidationError({"status":False,"log":"Plan not found"})
-        
-        
-        
-    
-    
+
+
+class PaymentIntentSerializer(serializers.Serializer):
+    payment_method_id = serializers.CharField(max_length=255, required=True)
+    first_name = serializers.CharField(max_length=200,required=True)
+    last_name = serializers.CharField(max_length=200,required=True)
+    address = serializers.CharField(max_length=250, required=True)
+    city = serializers.CharField(max_length=50, required=True)
+    state = serializers.CharField(max_length=50, required=True)
+    zip_code = serializers.CharField(max_length=6, required=True)
+    phone = serializers.CharField(max_length=15, required=True)
+    email = serializers.EmailField(required=True)

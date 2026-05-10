@@ -39,8 +39,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(max_length=255,unique=True,verbose_name="User Email")
-    firstName = models.CharField(max_length=200, blank=True, null=True,verbose_name="First Name")
-    lastName = models.CharField(max_length=200, blank=True, null=True,verbose_name="Last Name")
+    first_name = models.CharField(max_length=200, blank=True, null=True,verbose_name="First Name")
+    last_name = models.CharField(max_length=200, blank=True, null=True,verbose_name="Last Name")
     phone = models.CharField(max_length=15, unique=True, verbose_name="Phone Number", null=True, blank=True)
     image = models.ImageField(upload_to='profile_images/', blank=True, null=True,)
     address = models.CharField(max_length=200, blank=True, null=True,verbose_name="Address")

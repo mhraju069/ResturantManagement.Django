@@ -18,7 +18,16 @@ class Order(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='paid')
+    first_name = models.CharField(max_length=200,verbose_name="First Name")
+    last_name = models.CharField(max_length=200,verbose_name="Last Name")
+    email = models.EmailField(verbose_name="User Email")
+    phone = models.CharField(max_length=15, verbose_name="Phone Number")
+    address = models.CharField(max_length=250, verbose_name="Address")
+    city = models.CharField(max_length=50, verbose_name="City")
+    state = models.CharField(max_length=50, verbose_name="State")
+    zip_code = models.CharField(max_length=6, verbose_name="Zip Code")
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.conf import settings
 from subscription.models import Plan
+from order.models import Order
 
 class Payments(models.Model):
     STATUS = (
@@ -10,7 +11,9 @@ class Payments(models.Model):
         ('failed','Failed'),
     )
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
-    plan = models.ForeignKey(Plan,on_delete=models.CASCADE)
+    plan = models.ForeignKey(Plan,on_delete=models.CASCADE, null=True, blank=True)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, null=True, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     status = models.CharField(max_length=20,choices=STATUS,default='pending')
     tnxid = models.CharField(max_length=200,unique=True,blank=True, null=True)
     invoice = models.URLField(blank=True, null=True)
@@ -18,4 +21,4 @@ class Payments(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.user} - {self.plan.name} - {self.status} - {self.plan.price}"
+        return f"{self.user} - {self.status} - {self.amount}"
