@@ -4,6 +4,7 @@ from django.conf import settings
 from django.urls import reverse
 stripe.api_key = settings.STRIPE_SECRET_KEY
 from order.serializers import OrderSerializer
+from order.models import Coupon, Charges, ApplyCoupon
 from .models import *
 from product.models import ProductCart, CartItems
 
@@ -98,21 +99,21 @@ def Place_order(data, request):
 def final_price(request,total_amount,code=None):
     price = total_amount
 
-    cupon = Coupon.objects.filter(code=code).first()
-    applied = ApplyCoupon.objects.filter(user=request.user, cupon=cupon).first()
+    coupon = Coupon.objects.filter(code=code).first()
+    applied = ApplyCoupon.objects.filter(user=request.user, coupon=coupon).first()
 
     #Apply cupon if not applied and cupon is present
 
-    if not applied and cupon:
-        if cupon.discount_type == "fixed":
-            amount = cupon.discount_value
+    if not applied and coupon:
+        if coupon.discount_type == "fixed":
+            amount = float(coupon.discount_value)
         else:
-            amount = price * cupon.discount_value / 100
+            amount = float(price) * float(coupon.discount_value) / 100
 
-        price -= amount
-        print("Cupon applied: ", cupon.code, amount)
+        price = float(price) - amount
+        print("Cupon applied: ", coupon.code, amount)
 
-        ApplyCoupon.objects.create(user=request.user,cupon=cupon,amount=amount)
+        ApplyCoupon.objects.create(user=request.user, coupon=coupon, amount=amount)
 
 
     #Apply other charges
