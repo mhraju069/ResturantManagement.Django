@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from payment.helper import final_price
 from .models import *
 
 
@@ -25,13 +26,23 @@ class CartItemsSerializer(serializers.ModelSerializer):
 class ProductCartSerializer(serializers.ModelSerializer):
     cart_items = CartItemsSerializer(many=True, read_only=True)
     final_amount = serializers.SerializerMethodField()
+    coupon = serializers.CharField(max_length=20, required=False)
     
     class Meta:
         model = ProductCart
-        fields = ('cart_items','final_amount')
+        fields = ('cart_items','final_amount','coupon')
 
     def get_final_amount(self, obj):
-        return sum(item.quantity * item.food_item.price for item in obj.cart_items.all())
+        request = self.context.get('request')
+        if not request:
+            return 0
+            
+        subtotal = sum(item.quantity * item.food_item.price for item in obj.cart_items.all())        
+        
+        # Get coupon from query params or request data
+        coupon = request.query_params.get('coupon') or request.data.get('coupon')
+        
+        return final_price(request, subtotal, coupon)
 
 
 
