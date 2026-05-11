@@ -10,6 +10,7 @@ from .models import Payments
 from subscription.models import Plan, Subscriptions
 from .serializers import *
 from .helper import *
+from order.serializers import OrderSerializer
 from rest_framework.permissions import IsAuthenticated
 # Create your views here.
 
@@ -80,6 +81,7 @@ class PlaceOrderView(generics.GenericAPIView):
         return Response({
             "status": True,
             "message": "Payment completed successfully",
+            "order": OrderSerializer(order).data,
             "payment_id": create_payment.get("payment_id"),
             "client_secret": create_payment.get("client_secret")
         })
