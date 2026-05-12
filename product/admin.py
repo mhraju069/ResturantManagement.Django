@@ -16,6 +16,21 @@ class FoodItemAdmin(ModelAdmin):
     search_fields = ('name', 'category')
     list_filter = ('category', 'is_active')
     inlines = [FoodImageInline]
+    compressed_fields = True
+    
+    fieldsets = (
+        ("General Information", {
+            "fields": ("name", "category", "price", "is_active"),
+        }),
+        ("Details", {
+            "fields": ('short_details','description',),
+        }),
+        ("Timestamps", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",),
+        }),
+    )
+    readonly_fields = ('created_at', 'updated_at')
 
 
 @admin.register(ProductCart)
