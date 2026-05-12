@@ -1,0 +1,888 @@
+{% extends "unfold/layouts/base.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+<!-- =====================================================
+     VARIVO ADMIN DASHBOARD
+     – Proper dark/light mode via Unfold's .dark class
+     – Chart filters (7D / 1M / 1Y) powered by JS
+     – Stripe invoice links
+===================================================== -->
+
+<style>
+    /* ── Typography ─────────────────────────────────────── */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    #dashboard-root {
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* ── Card base ──────────────────────────────────────── */
+    .vd-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+        transition: box-shadow .2s, border-color .2s;
+    }
+
+    .dark .vd-card {
+        background: #1f2937;
+        /* gray-800 */
+        border-color: #374151;
+        /* gray-700 */
+    }
+
+    .vd-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+    }
+
+    /* ── Stat card value ─────────────────────────────────── */
+    .vd-stat-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        line-height: 1.2;
+        color: #111827;
+    }
+
+    .dark .vd-stat-value {
+        color: #f9fafb;
+    }
+
+    /* ── Stat card label ─────────────────────────────────── */
+    .vd-label {
+        font-size: .68rem;
+        font-weight: 600;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: #6b7280;
+    }
+
+    .dark .vd-label {
+        color: #9ca3af;
+    }
+
+    /* ── Sub-text ────────────────────────────────────────── */
+    .vd-sub {
+        font-size: .72rem;
+        color: #9ca3af;
+    }
+
+    .dark .vd-sub {
+        color: #6b7280;
+    }
+
+    /* ── Section title ───────────────────────────────────── */
+    .vd-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .dark .vd-title {
+        color: #f9fafb;
+    }
+
+    /* ── Table ───────────────────────────────────────────── */
+    .vd-table th {
+        font-size: .65rem;
+        font-weight: 600;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: #9ca3af;
+        border-bottom: 1px solid #f3f4f6;
+        padding-bottom: 10px;
+    }
+
+    .dark .vd-table th {
+        color: #6b7280;
+        border-color: #374151;
+    }
+
+    .vd-table td {
+        font-size: .8rem;
+        color: #374151;
+        border-bottom: 1px solid #f9fafb;
+        padding: 12px 0;
+    }
+
+    .dark .vd-table td {
+        color: #d1d5db;
+        border-color: #374151;
+    }
+
+    .vd-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .vd-table tr:hover td {
+        background: rgba(0, 0, 0, .018);
+    }
+
+    .dark .vd-table tr:hover td {
+        background: rgba(255, 255, 255, .03);
+    }
+
+    /* ── Chart toggle buttons ─────────────────────────────── */
+    .chart-btn {
+        padding: 5px 14px;
+        font-size: .7rem;
+        font-weight: 600;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        background: transparent;
+        color: #6b7280;
+        transition: all .15s;
+    }
+
+    .dark .chart-btn {
+        color: #9ca3af;
+    }
+
+    .chart-btn.active {
+        background: #fff;
+        color: #111827;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, .12);
+    }
+
+    .dark .chart-btn.active {
+        background: #374151;
+        color: #f9fafb;
+    }
+
+    .chart-btn-group {
+        background: #f3f4f6;
+        border-radius: 8px;
+        padding: 3px;
+        display: flex;
+    }
+
+    .dark .chart-btn-group {
+        background: #111827;
+    }
+
+    /* ── Badge ───────────────────────────────────────────── */
+    .vd-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: .65rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    .vd-badge-green {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .dark .vd-badge-green {
+        background: rgba(16, 185, 129, .15);
+        color: #34d399;
+    }
+
+    .vd-badge-yellow {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .dark .vd-badge-yellow {
+        background: rgba(245, 158, 11, .15);
+        color: #fbbf24;
+    }
+
+    .vd-badge-red {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .dark .vd-badge-red {
+        background: rgba(239, 68, 68, .15);
+        color: #f87171;
+    }
+
+    /* ── LIVE dot ─────────────────────────────────────────── */
+    .live-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #22c55e;
+        display: inline-block;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: .4;
+        }
+    }
+
+    /* ── Icon button ─────────────────────────────────────── */
+    .vd-icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: #9ca3af;
+        transition: all .15s;
+    }
+
+    .vd-icon-btn:hover {
+        background: #f3f4f6;
+        color: #ea580c;
+    }
+
+    .dark .vd-icon-btn:hover {
+        background: #374151;
+        color: #fb923c;
+    }
+
+    .dark .vd-icon-btn {
+        color: #6b7280;
+    }
+
+    /* ── Avatar ──────────────────────────────────────────── */
+    .vd-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        font-size: .8rem;
+        font-weight: 700;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .vd-avatar-green {
+        background: #22c55e;
+    }
+
+    .vd-avatar-gray {
+        background: #6b7280;
+    }
+
+    /* ── Chart bar ───────────────────────────────────────── */
+    .chart-bar {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        position: relative;
+        height: 100%;
+    }
+
+    .chart-bar-fill {
+        width: 100%;
+        background: rgba(249, 115, 22, .2);
+        border-radius: 4px 4px 0 0;
+        transition: height .4s ease, background .15s;
+        cursor: pointer;
+        min-height: 3px;
+    }
+
+    .dark .chart-bar-fill {
+        background: rgba(249, 115, 22, .3);
+    }
+
+    .chart-bar:hover .chart-bar-fill {
+        background: #f97316;
+    }
+
+    .dark .chart-bar:hover .chart-bar-fill {
+        background: #fb923c;
+    }
+
+    /* Tooltip */
+    .chart-bar .tooltip {
+        position: absolute;
+        top: -36px;
+        background: #111827;
+        color: #fff;
+        font-size: .7rem;
+        font-weight: 700;
+        padding: 4px 8px;
+        border-radius: 6px;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(4px);
+        transition: opacity .15s, transform .15s;
+    }
+
+    .dark .chart-bar .tooltip {
+        background: #f9fafb;
+        color: #111827;
+    }
+
+    .chart-bar:hover .tooltip {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .chart-bar-label {
+        font-size: .58rem;
+        font-weight: 600;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: #9ca3af;
+        margin-top: 6px;
+    }
+
+    .dark .chart-bar-label {
+        color: #6b7280;
+    }
+
+    /* ── Link ─────────────────────────────────────────────── */
+    .vd-link {
+        font-size: .7rem;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: #f97316;
+        text-decoration: none;
+        transition: opacity .15s;
+    }
+
+    .dark .vd-link {
+        color: #fb923c;
+    }
+
+    .vd-link:hover {
+        opacity: .7;
+    }
+
+    /* ── Order Item ───────────────────────────────────────── */
+    .vd-order-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: #f9fafb;
+        border: 1px solid #f3f4f6;
+        transition: border-color .15s;
+    }
+
+    .dark .vd-order-item {
+        background: #111827;
+        /* gray-900 */
+        border-color: #374151;
+        /* gray-700 */
+    }
+
+    .vd-order-item:hover {
+        border-color: #fed7aa;
+    }
+
+    .dark .vd-order-item:hover {
+        border-color: #ea580c;
+    }
+
+    .vd-order-name {
+        font-size: .82rem;
+        font-weight: 700;
+        color: #111827;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .dark .vd-order-name {
+        color: #f9fafb;
+    }
+
+    /* ── Activity Item ────────────────────────────────────── */
+    .vd-activity-name {
+        font-size: .82rem;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .dark .vd-activity-name {
+        color: #f9fafb;
+    }
+
+    .vd-clickable-name {
+        text-decoration: none;
+        color: inherit;
+        transition: color .15s;
+    }
+
+    .vd-clickable-name:hover {
+        color: #f97316 !important;
+    }
+
+    /* ── Leaderboard ──────────────────────────────────────── */
+    .lb-rank {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        font-size: .75rem;
+        font-weight: 800;
+        color: #fff;
+    }
+
+    .lb-rank-1, .lb-rank-2, .lb-rank-3 { 
+        background: transparent; 
+        box-shadow: none; 
+        font-size: 1.25rem; 
+    }
+
+    .lb-rank-other {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .dark .lb-rank-other {
+        background: #374151;
+        color: #9ca3af;
+    }
+
+    .lb-food-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: rgba(249, 115, 22, .1);
+        color: #ea580c;
+        border: 1px solid rgba(249, 115, 22, .2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: .8rem;
+        flex-shrink: 0;
+    }
+
+    .dark .lb-food-avatar {
+        background: rgba(249, 115, 22, .15);
+        color: #fb923c;
+        border-color: rgba(249, 115, 22, .3);
+    }
+
+    .lb-progress-bg {
+        width: 50px;
+        height: 6px;
+        background: #e5e7eb;
+        border-radius: 3px;
+        overflow: hidden;
+        display: inline-block;
+        margin-left: 8px;
+        vertical-align: middle;
+    }
+
+    .dark .lb-progress-bg {
+        background: #374151;
+    }
+
+    .lb-progress-fill {
+        height: 100%;
+        background: #f97316;
+        border-radius: 3px;
+        transition: width .5s ease;
+    }
+</style>
+
+<div id="dashboard-root"
+    style="padding: 28px 32px; min-height: 100vh; display: flex; flex-direction: column; gap: 24px;">
+
+    <!-- ── KPI Cards ─────────────────────────────────────── -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+        {% for stat in custom_stats %}
+        <div class="vd-card" style="position: relative; overflow: hidden;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <p class="vd-label">{{ stat.title }}</p>
+                <div style="display: flex; align-items: center; gap: 5px; opacity: .6;">
+                    <span class="live-dot"></span>
+                    <span class="vd-sub" style="font-size:.6rem; font-weight:700;">LIVE</span>
+                </div>
+            </div>
+            <p class="vd-stat-value">{{ stat.value }}</p>
+            <p class="vd-sub {{ stat.color }}" style="margin-top: 8px; font-weight: 600;">{{ stat.change }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- ── Revenue Chart + Upcoming Orders ───────────────── -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+
+        <!-- Chart -->
+        <div class="vd-card" style="display: flex; flex-direction: column;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <p class="vd-title">Revenue Overview</p>
+                    <p class="vd-sub" style="margin-top: 3px;">Net revenue performance over time</p>
+                </div>
+                <div class="chart-btn-group" role="group">
+                    <button class="chart-btn" onclick="switchChart(this,'7d')" data-period="7d">7D</button>
+                    <button class="chart-btn" onclick="switchChart(this,'1m')" data-period="1m">1M</button>
+                    <button class="chart-btn active" onclick="switchChart(this,'1y')" data-period="1y">1Y</button>
+                </div>
+            </div>
+
+            <!-- Chart bars container -->
+            <div id="chart-bars"
+                style="flex: 1; min-height: 220px; display: flex; align-items: flex-end; gap: 6px; padding-top: 40px;">
+                {% for item in revenue_chart %}
+                <div class="chart-bar" data-period="1y">
+                    <div class="tooltip">${{ item.value|floatformat:0 }}</div>
+                    <div class="chart-bar-fill" style="height: {{ item.height }}%;"></div>
+                    <span class="chart-bar-label">{{ item.label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Orders -->
+        <div class="vd-card" style="display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <p class="vd-title">Recent Orders</p>
+                <a href="/admin/order/order/" class="vd-link">View All →</a>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto;">
+                {% for order in upcoming_orders %}
+                <a href="/admin/order/order/{{ order.id }}/change/" style="text-decoration:none; display:block;">
+                    <div class="vd-order-item">
+                        <div style="overflow: hidden;">
+                            <p class="vd-order-name">
+                                {{ order.first_name }} {{ order.last_name }}
+                            </p>
+                            <p class="vd-sub" style="margin-top: 2px;">{{ order.city|default:"Delivery" }} &bull; {{ order.created_at|date:"d M Y, h:i A" }}</p>
+                        </div>
+                        {% if order.status == 'paid' %}
+                        <span class="vd-badge vd-badge-green">{{ order.status }}</span>
+                        {% elif order.status == 'pending' %}
+                        <span class="vd-badge vd-badge-yellow">{{ order.status }}</span>
+                        {% else %}
+                        <span class="vd-badge vd-badge-red">{{ order.status }}</span>
+                        {% endif %}
+                    </div>
+                </a>
+                {% empty %}
+                <p class="vd-sub" style="text-align:center; padding: 24px 0;">No upcoming bookings</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Activity + Invoices ───────────────────────────── -->
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; padding-bottom: 32px;">
+
+        <!-- Recent Activity -->
+        <div class="vd-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <p class="vd-title">Recent Activity</p>
+                <a href="/admin/authentication/user/" class="vd-link">Manage →</a>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+                {% for act in recent_activity %}
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="vd-avatar {{ act.color }}">
+                            {% if act.image_url %}
+                            <img src="{{ act.image_url }}" alt="{{ act.name }}"
+                                style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                            {% else %}
+                            {{ act.name|slice:":2"|upper }}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <p class="vd-activity-name"><a href="/admin/authentication/user/{{ act.id }}/change/"
+                                    class="vd-clickable-name">{{ act.name }}</a></p>
+                            <p class="vd-sub">{{ act.action }}</p>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        {% if act.status == 'ACTIVE' %}
+                        <span class="vd-badge vd-badge-green">{{ act.status }}</span>
+                        {% else %}
+                        <span class="vd-badge vd-badge-yellow">{{ act.status }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Invoices / Payments -->
+        <div class="vd-card" style="overflow: hidden;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <p class="vd-title">Recent Invoices</p>
+                <a href="/admin/payment/payments/" class="vd-link">View All →</a>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="vd-table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left; padding-right: 16px;">Invoice</th>
+                            <th style="text-align:left; padding-right: 16px;">Customer</th>
+                            <th style="text-align:right; padding-right: 16px;">Amount</th>
+                            <th style="text-align:left; padding-right: 16px;">Status</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pmt in recent_payments %}
+                        <tr>
+                            <td style="padding-right: 16px;">
+                                <span
+                                    style="font-family: monospace; font-size: .72rem; font-weight: 700; color: #f59e0b;">
+                                    {{ pmt.tnxid|default:"—"|slice:":12" }}
+                                </span>
+                            </td>
+                            <td style="font-weight: 600; padding-right: 16px;">
+                                {{ pmt.user.first_name|default:pmt.user.email }} {{ pmt.user.last_name|default:"" }}
+                            </td>
+                            <td style="text-align:right; font-weight: 700; padding-right: 16px;">
+                                ${{ pmt.amount }}
+                            </td>
+                            <td style="padding-right: 16px;">
+                                {% if pmt.status == 'paid' %}
+                                <span class="vd-badge vd-badge-green">Paid</span>
+                                {% elif pmt.status == 'pending' %}
+                                <span class="vd-badge vd-badge-yellow">Pending</span>
+                                {% else %}
+                                <span class="vd-badge vd-badge-red">Failed</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
+                                    <!-- View order -->
+                                    {% if pmt.order %}
+                                    <a href="/admin/order/order/{{ pmt.order.id }}/change/" title="View Order"
+                                        class="vd-icon-btn">
+                                        <span class="material-symbols-outlined"
+                                            style="font-size:18px;">visibility</span>
+                                    </a>
+                                    {% endif %}
+
+                                    <!-- Stripe invoice (opens in new tab) -->
+                                    {% if pmt.invoice %}
+                                    <a href="{{ pmt.invoice }}" target="_blank" rel="noopener"
+                                        title="View Stripe Invoice" class="vd-icon-btn">
+                                        <span class="material-symbols-outlined"
+                                            style="font-size:18px;">receipt_long</span>
+                                    </a>
+                                    <a href="{{ pmt.invoice }}?download=1" target="_blank" rel="noopener"
+                                        title="Download Invoice" class="vd-icon-btn">
+                                        <span class="material-symbols-outlined" style="font-size:18px;">download</span>
+                                    </a>
+                                    {% else %}
+                                    <button class="vd-icon-btn" disabled title="No invoice available"
+                                        style="opacity:.35; cursor:not-allowed;">
+                                        <span class="material-symbols-outlined" style="font-size:18px;">download</span>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align:center; padding: 32px 0; color: #9ca3af;">
+                                No payment records yet
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Food Leaderboard ─────────────────────────────── -->
+    <div class="vd-card">
+        <div
+            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <p class="vd-title">Most Ordered Foods Leaderboard</p>
+                <p class="vd-sub" style="margin-top: 3px;">Top performing menu items by quantity and revenue</p>
+            </div>
+            <div class="chart-btn-group" role="group">
+                <button class="chart-btn lb-btn" onclick="switchLeaderboard(this,'7d')" data-period="7d">7D</button>
+                <button class="chart-btn lb-btn" onclick="switchLeaderboard(this,'1m')" data-period="1m">1M</button>
+                <button class="chart-btn lb-btn active" onclick="switchLeaderboard(this,'1y')"
+                    data-period="1y">1Y</button>
+            </div>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="vd-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left; padding-right: 16px;">Rank</th>
+                        <th style="text-align:left; padding-right: 16px;">Food Item</th>
+                        <th style="text-align:center; padding-right: 16px;">Orders</th>
+                        <th style="text-align:right;">Revenue</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    {% for item in leaderboard_1y %}
+                    <tr>
+                        <td style="padding-right: 16px; width: 60px;">
+                            {% if forloop.counter == 1 %}
+                            <div class="lb-rank lb-rank-1">🥇</div>
+                            {% elif forloop.counter == 2 %}
+                            <div class="lb-rank lb-rank-2">🥈</div>
+                            {% elif forloop.counter == 3 %}
+                            <div class="lb-rank lb-rank-3">🥉</div>
+                            {% else %}
+                            <div class="lb-rank lb-rank-other">{{ forloop.counter }}</div>
+                            {% endif %}
+                        </td>
+                        <td style="padding-right: 16px; padding-top: 10px; padding-bottom: 10px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="lb-food-avatar">
+                                    {% if item.image_url %}
+                                    <img src="{{ item.image_url }}" alt="{{ item.name }}"
+                                        style="width: 100%; height: 100%; object-fit: cover; border-radius: 7px;">
+                                    {% else %}
+                                    {{ item.name|slice:":2"|upper }}
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <p class="vd-activity-name"><a href="/admin/product/fooditem/{{ item.id }}/change/"
+                                            class="vd-clickable-name">{{ item.name }}</a></p>
+                                    <p class="vd-sub">{{ item.category }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="text-align:center; padding-right: 16px; white-space: nowrap;">
+                            <span style="font-weight: 700; font-size: .85rem;" class="dark:text-gray-200">{{ item.qty }}</span>
+                            <div class="lb-progress-bg">
+                                <div class="lb-progress-fill" style="width: {{ item.percent }}%;"></div>
+                            </div>
+                        </td>
+                        <td style="text-align:right; font-weight: 800; font-size: .85rem; color: #10b981;">
+                            ${{ item.rev|floatformat:0 }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align:center; padding: 32px 0; color: #9ca3af;">
+                            No data available
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- =====================================================
+     Chart JS — 7D / 1M / 1Y switching
+     Data is embedded as JSON from the backend
+===================================================== -->
+<script>
+    const CHART_DATA = {
+        '7d': {{ chart_7d_json|safe }},
+        '1m': {{ chart_1m_json|safe }},
+        '1y': {{ chart_1y_json|safe }},
+    };
+
+    const LB_DATA = {
+        '7d': {{ leaderboard_7d_json|safe }},
+        '1m': {{ leaderboard_1m_json|safe }},
+        '1y': {{ leaderboard_1y_json|safe }},
+    };
+
+    function switchChart(btn, period) {
+        // Update active button
+        btn.closest('.chart-btn-group')
+            .querySelectorAll('.chart-btn')
+            .forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Re-render bars
+        const container = document.getElementById('chart-bars');
+        const data = CHART_DATA[period];
+        if (!data || !data.length) return;
+
+        const maxVal = Math.max(...data.map(d => d.value), 1);
+
+        container.innerHTML = data.map(d => {
+            const height = Math.max((d.value / maxVal) * 100, 2).toFixed(1);
+            const label = d.label;
+            const val = d.value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+            return `<div class="chart-bar">
+            <div class="tooltip">$${val}</div>
+            <div class="chart-bar-fill" style="height:${height}%"></div>
+            <span class="chart-bar-label">${label}</span>
+        </div>`;
+        }).join('');
+    }
+
+    function switchLeaderboard(btn, period) {
+        // Update active button
+        btn.closest('.chart-btn-group')
+            .querySelectorAll('.chart-btn')
+            .forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Re-render leaderboard rows
+        const container = document.getElementById('leaderboard-body');
+        const data = LB_DATA[period];
+        if (!data || !data.length) {
+            container.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 32px 0; color: #9ca3af;">No data available</td></tr>`;
+            return;
+        }
+
+        container.innerHTML = data.map((item, index) => {
+            const rev = item.rev.toLocaleString('en-US', { maximumFractionDigits: 0 });
+            const rankClass = index === 0 ? 'lb-rank-1' : index === 1 ? 'lb-rank-2' : index === 2 ? 'lb-rank-3' : 'lb-rank-other';
+            const rankContent = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1;
+            const initials = item.name.substring(0, 2).toUpperCase();
+            const avatarContent = item.image_url
+                ? `<img src="${item.image_url}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 7px;">`
+                : initials;
+
+            return `<tr>
+                <td style="padding-right: 16px; width: 60px;">
+                    <div class="lb-rank ${rankClass}">${rankContent}</div>
+                </td>
+                <td style="padding-right: 16px; padding-top: 10px; padding-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="lb-food-avatar">${avatarContent}</div>
+                        <div>
+                            <p class="vd-activity-name"><a href="/admin/product/fooditem/${item.id}/change/" class="vd-clickable-name">${item.name}</a></p>
+                            <p class="vd-sub">${item.category}</p>
+                        </div>
+                    </div>
+                </td>
+                <td style="text-align:center; padding-right: 16px; white-space: nowrap;">
+                    <span style="font-weight: 700; font-size: .85rem;" class="dark:text-gray-200">${item.qty}</span>
+                    <div class="lb-progress-bg">
+                        <div class="lb-progress-fill" style="width: ${item.percent}%;"></div>
+                    </div>
+                </td>
+                <td style="text-align:right; font-weight: 800; font-size: .85rem; color: #10b981;">
+                    $${rev}
+                </td>
+            </tr>`;
+        }).join('');
+    }
+</script>
+
+{% endblock %}

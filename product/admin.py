@@ -1,13 +1,25 @@
 from django.contrib import admin
 from .models import *
 from unfold.admin import ModelAdmin, TabularInline
+from django import forms
+from core.widgets import PremiumImageUpload
 
 
 # Register your models here.
 
 
+class FoodImageInlineForm(forms.ModelForm):
+    class Meta:
+        model = FoodImage
+        fields = '__all__'
+        widgets = {
+            'image': PremiumImageUpload(),
+        }
+
+
 class FoodImageInline(TabularInline):
     model = FoodImage
+    form = FoodImageInlineForm
     extra = 1
 
 @admin.register(FoodItem)

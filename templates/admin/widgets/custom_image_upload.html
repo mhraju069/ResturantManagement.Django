@@ -1,0 +1,276 @@
+{# Custom drag-and-drop image upload widget #}
+{% load i18n %}
+
+<div class="vd-upload-wrapper" id="vd-upload-{{ widget.attrs.id }}">
+
+    {# --- Hidden real file input --- #}
+    <input type="file"
+           name="{{ widget.name }}"
+           id="{{ widget.attrs.id }}"
+           accept="image/*"
+           class="vd-upload-input"
+           {% if widget.attrs.required %}required{% endif %}>
+
+    {# --- Drop Zone --- #}
+    <label for="{{ widget.attrs.id }}" class="vd-drop-zone" id="vd-zone-{{ widget.attrs.id }}">
+        <div class="vd-upload-preview" id="vd-preview-{{ widget.attrs.id }}">
+            {% if widget.value %}
+                <img src="{{ widget.value.url }}" class="vd-preview-img" id="vd-img-{{ widget.attrs.id }}" alt="Current image">
+                <div class="vd-preview-overlay">
+                    <span class="material-symbols-outlined" style="font-size:28px;">photo_camera</span>
+                    <span>Change photo</span>
+                </div>
+            {% else %}
+                <div class="vd-idle-state" id="vd-idle-{{ widget.attrs.id }}">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="vd-upload-icon">
+                        <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                    <p class="vd-upload-title">Drop image here</p>
+                    <p class="vd-upload-sub">or click to browse</p>
+                </div>
+            {% endif %}
+        </div>
+    </label>
+
+    {# --- File name / clear row --- #}
+    <div class="vd-upload-meta" id="vd-meta-{{ widget.attrs.id }}" style="display:none;">
+        <span class="vd-upload-filename" id="vd-fname-{{ widget.attrs.id }}"></span>
+        <button type="button" class="vd-upload-clear" onclick="vdClear('{{ widget.attrs.id }}')" title="Remove">
+            <span class="material-symbols-outlined" style="font-size:16px;">close</span>
+        </button>
+    </div>
+
+    {# --- Current image clear checkbox (Django standard) --- #}
+    {% if widget.value %}
+    <div class="vd-upload-clear-row">
+        <input type="checkbox" name="{{ widget.name }}-clear" id="{{ widget.attrs.id }}-clear-id" class="vd-clear-check">
+        <label for="{{ widget.attrs.id }}-clear-id" class="vd-clear-label">{% trans "Remove current image" %}</label>
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+.vd-upload-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 320px;
+}
+
+/* ── Hidden real input ─────────────────────────────── */
+.vd-upload-input { display: none; }
+
+/* ── Drop zone ─────────────────────────────────────── */
+.vd-drop-zone {
+    display: block;
+    cursor: pointer;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* ── Preview container ─────────────────────────────── */
+.vd-upload-preview {
+    height: 220px;
+    width: 100%;
+    border-radius: 12px;
+    border: 2px dashed #f97316;
+    background: rgba(249, 115, 22, .04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.dark .vd-upload-preview {
+    background: rgba(249, 115, 22, .08);
+    border-color: rgba(249, 115, 22, .5);
+}
+.vd-drop-zone:hover .vd-upload-preview,
+.vd-drop-zone.dragover .vd-upload-preview {
+    border-color: #ea580c;
+    background: rgba(249, 115, 22, .1);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, .12);
+}
+
+/* ── Idle state ────────────────────────────────────── */
+.vd-idle-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px;
+    color: #9ca3af;
+    transition: color .2s;
+}
+.dark .vd-idle-state { color: #6b7280; }
+.vd-drop-zone:hover .vd-idle-state { color: #f97316; }
+
+.vd-upload-icon {
+    width: 52px;
+    height: 52px;
+    stroke: currentColor;
+}
+
+.vd-upload-title {
+    font-size: .9rem;
+    font-weight: 700;
+    color: inherit;
+    margin: 0;
+}
+.vd-upload-sub {
+    font-size: .72rem;
+    color: inherit;
+    opacity: .7;
+    margin: 0;
+}
+
+/* ── Preview image (once selected) ────────────────── */
+.vd-preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform .3s;
+}
+.vd-drop-zone:hover .vd-preview-img { transform: scale(1.03); }
+
+.vd-preview-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #fff;
+    font-size: .78rem;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity .2s;
+}
+.vd-drop-zone:hover .vd-preview-overlay { opacity: 1; }
+
+/* ── Meta (file name + clear button) ──────────────── */
+.vd-upload-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+}
+.dark .vd-upload-meta {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+.vd-upload-filename {
+    font-size: .72rem;
+    font-weight: 600;
+    color: #374151;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+.dark .vd-upload-filename { color: #d1d5db; }
+
+.vd-upload-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: none;
+    background: #fee2e2;
+    color: #ef4444;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .15s;
+}
+.vd-upload-clear:hover { background: #fecaca; }
+
+/* ── Remove current image ──────────────────────────── */
+.vd-upload-clear-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.vd-clear-check { accent-color: #f97316; width: 14px; height: 14px; }
+.vd-clear-label { font-size: .72rem; color: #ef4444; font-weight: 600; cursor: pointer; }
+</style>
+
+<script>
+(function() {
+    const id = "{{ widget.attrs.id }}";
+    const input  = document.getElementById(id);
+    const zone   = document.getElementById("vd-zone-" + id);
+    const meta   = document.getElementById("vd-meta-" + id);
+    const fname  = document.getElementById("vd-fname-" + id);
+    const preview = document.getElementById("vd-preview-" + id);
+    const idle   = document.getElementById("vd-idle-" + id);
+
+    if (!input) return;
+
+    function showPreview(file) {
+        fname.textContent = file.name + " (" + (file.size / 1024).toFixed(1) + " KB)";
+        meta.style.display = "flex";
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Clear idle state, show image
+            preview.innerHTML =
+                '<img class="vd-preview-img" src="' + e.target.result + '" alt="Preview">' +
+                '<div class="vd-preview-overlay">' +
+                  '<span class="material-symbols-outlined" style="font-size:28px;">photo_camera</span>' +
+                  '<span>Change photo</span>' +
+                '</div>';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    input.addEventListener("change", function() {
+        if (this.files && this.files[0]) showPreview(this.files[0]);
+    });
+
+    // Drag-and-drop
+    zone.addEventListener("dragover", function(e) { e.preventDefault(); zone.classList.add("dragover"); });
+    zone.addEventListener("dragleave", function() { zone.classList.remove("dragover"); });
+    zone.addEventListener("drop", function(e) {
+        e.preventDefault();
+        zone.classList.remove("dragover");
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith("image/")) {
+            // Inject into the hidden input
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            showPreview(file);
+        }
+    });
+})();
+
+function vdClear(id) {
+    const input  = document.getElementById(id);
+    const meta   = document.getElementById("vd-meta-" + id);
+    const preview = document.getElementById("vd-preview-" + id);
+
+    input.value = "";
+    meta.style.display = "none";
+    preview.innerHTML =
+        '<div class="vd-idle-state">' +
+          '<svg viewBox="0 0 24 24" fill="none" class="vd-upload-icon" xmlns="http://www.w3.org/2000/svg">' +
+            '<path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '</svg>' +
+          '<p class="vd-upload-title">Drop image here</p>' +
+          '<p class="vd-upload-sub">or click to browse</p>' +
+        '</div>';
+}
+</script>
