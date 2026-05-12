@@ -15,19 +15,25 @@ if os.path.exists(cred_path):
 else:
     print(f"Warning: Firebase certificate not found at {cred_path}")
 
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 DEBUG = os.getenv('DEBUG', True)
 SECRET_KEY = os.getenv("SECRET_KEY")
-BASE_DIR = Path(__file__).resolve().parent.parent
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
 DATA_UPLOAD_MAX_MEMORY_SIZE = 1048576
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
 CORS_ALLOW_HEADERS = list(default_headers) + ['ngrok-skip-browser-warning',]
-CORS_ALLOW_ORIGINS =  os.getenv('CORS_ALLOW_ORIGINS', 'localhost:8000,localhost:3000,https://hecticly-rural-kittie.ngrok-free.dev').split(',')
-CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'localhost:8000,localhost:3000,hecticly-rural-kittie.ngrok-free.dev').split(',')
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://localhost:3000',
+    'https://*.ngrok-free.dev',
+    'http://*.ngrok-free.dev',
+]
 
 
 INSTALLED_APPS = [

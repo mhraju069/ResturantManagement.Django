@@ -80,7 +80,7 @@ def Place_order(data, request):
             'price': item.food_item.price
         })
 
-    data['total_amount'] = final_price(request,total_amount,data['cupon'])
+    data['total_amount'] = final_price(request, total_amount, data.get('coupon'))
     data['user'] = user.id
     data['order_items'] = order_items_data
 

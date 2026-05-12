@@ -10,14 +10,35 @@ class FoodItem(models.Model):
     category = models.CharField(max_length=100)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = models.ImageField(upload_to='food_images/')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
-    
+
+
+
+class FoodImage(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    food = models.ForeignKey(FoodItem, on_delete=models.CASCADE,related_name='images')
+    image = models.ImageField(upload_to='food_images/')
+
+    def __str__(self):
+        return f"Image for {self.food.name}"
+
+
+
+class Menu(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    date = models.DateField(unique=True)
+    foods = models.ManyToManyField(FoodItem,related_name='menu')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Menu for {self.date}"
+
 
 
 
