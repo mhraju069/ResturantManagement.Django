@@ -4,5 +4,9 @@ from .serializers import OrderSerializer
 
 class OrderApiView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
-    queryset = Order.objects.all()
     serializer_class = OrderSerializer
+
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user).order_by('-created_at')
+
+    

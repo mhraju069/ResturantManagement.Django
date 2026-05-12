@@ -3,6 +3,7 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 load_dotenv()
+from django.utils.translation import gettext_lazy as _
 from corsheaders.defaults import default_headers
 import firebase_admin
 from firebase_admin import credentials
@@ -38,6 +39,7 @@ CSRF_TRUSTED_ORIGINS = [
 
 INSTALLED_APPS = [
     'unfold',
+    'django.forms',
     'channels',
     'corsheaders',
     'django.contrib.admin',
@@ -85,6 +87,7 @@ TEMPLATES = [
     },
 ]
 
+FORM_RENDERER = 'django.forms.renderers.TemplatesSetting'
 
 if os.getenv("USE_PSQL", "False") == "True":
     DATABASES = {
@@ -192,4 +195,83 @@ SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': True,
     'LOGIN_URL': '/api-auth/login/',
     'LOGOUT_URL': '/api-auth/logout/',
+}
+
+
+UNFOLD = {
+    "SITE_TITLE": "Varivo Admin",
+    "SITE_HEADER": "Varivo Control Center",
+    "SITE_SYMBOL": "speed",
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": True,
+    "COLORS": {
+        "primary": {
+            "50": "255 247 237",
+            "100": "255 237 213",
+            "200": "254 215 170",
+            "300": "253 186 116",
+            "400": "251 146 60",
+            "500": "249 115 22",
+            "600": "234 88 12",
+            "700": "194 65 12",
+            "800": "154 52 18",
+            "900": "124 45 18",
+            "950": "67 20 7",
+        },
+    },
+    "DASHBOARD_CALLBACK": "config.admin.dashboard_callback",
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+        "navigation": [
+            {
+                "title": _("Business Overview"),
+                "separator": True,
+                "items": [
+                    {
+                        "title": _("Dashboard"),
+                        "icon": "dashboard",
+                        "link": "/admin/",
+                    },
+                ],
+            },
+            {
+                "title": _("Core Management"),
+                "separator": True,
+                "items": [
+                    {
+                        "title": _("User Base"),
+                        "icon": "group",
+                        "link": "/admin/authentication/user/",
+                    },
+                    {
+                        "title": _("Order History"),
+                        "icon": "shopping_cart",
+                        "link": "/admin/order/order/",
+                    },
+                    {
+                        "title": _("Coupons"),
+                        "icon": "confirmation_number",
+                        "link": "/admin/order/coupon/",
+                    },
+                ],
+            },
+            {
+                "title": _("Inventory"),
+                "separator": True,
+                "items": [
+                    {
+                        "title": _("Food Items"),
+                        "icon": "restaurant",
+                        "link": "/admin/product/fooditem/",
+                    },
+                    {
+                        "title": _("Daily Menu"),
+                        "icon": "menu_book",
+                        "link": "/admin/product/menu/",
+                    },
+                ],
+            },
+        ],
+    },
 }
