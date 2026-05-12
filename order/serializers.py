@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from .models import Order, OrderItem
-
+from .models import *
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -24,4 +23,16 @@ class OrderSerializer(serializers.ModelSerializer):
             OrderItem.objects.create(order=order, **item)
         return order
 
-        
+    
+class ChargesSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Charges
+        exclude = ('id','active',)
+
+
+class CouponSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Coupon
+        exclude = ('id', 'active',)
+    

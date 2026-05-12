@@ -2,6 +2,7 @@
 import stripe
 from django.conf import settings
 from django.urls import reverse
+from decimal import Decimal
 stripe.api_key = settings.STRIPE_SECRET_KEY
 from order.serializers import OrderSerializer
 from order.models import Coupon, Charges, ApplyCoupon
@@ -87,6 +88,18 @@ def Place_order(data, request):
     serializer = OrderSerializer(data=data)
     if serializer.is_valid():
         order = serializer.save()
+        
+        # Record the coupon usage since the order is placed
+        coupon_code = data.get('coupon')
+        if coupon_code:
+            coupon = Coupon.objects.filter(code=coupon_code).first()
+            if coupon and not ApplyCoupon.objects.filter(user=request.user, coupon=coupon).exists():
+                if coupon.discount_type == "fixed":
+                    amount = Decimal(str(coupon.discount_value))
+                else:
+                    amount = (Decimal(str(total_amount)) * Decimal(str(coupon.discount_value))) / Decimal('100')
+                ApplyCoupon.objects.create(user=request.user, coupon=coupon, amount=amount)
+
         # Clear cart
         # cart_items.delete()
         return {"status": True, "order": order}
@@ -97,7 +110,7 @@ def Place_order(data, request):
 
 
 def final_price(request,total_amount,code=None):
-    price = total_amount
+    price = Decimal(str(total_amount))
 
     coupon = Coupon.objects.filter(code=code).first()
     applied = ApplyCoupon.objects.filter(user=request.user, coupon=coupon).first()
@@ -106,27 +119,25 @@ def final_price(request,total_amount,code=None):
 
     if not applied and coupon:
         if coupon.discount_type == "fixed":
-            amount = float(coupon.discount_value)
+            amount = Decimal(str(coupon.discount_value))
         else:
-            amount = float(price) * float(coupon.discount_value) / 100
+            amount = (price * Decimal(str(coupon.discount_value))) / Decimal('100')
 
-        price = float(price) - amount
+        price = price - amount
         print("Cupon applied: ", coupon.code, amount)
-
-        ApplyCoupon.objects.create(user=request.user, coupon=coupon, amount=amount)
 
 
     #Apply other charges
 
     charges = Charges.objects.filter(active=True)
 
-    total_charges = 0
+    total_charges = Decimal('0')
 
     for charge in charges:
         if charge.charge_type == "fixed":
-            total_charges += charge.value
+            total_charges += Decimal(str(charge.value))
         else:
-            total_charges += price * charge.value / 100
+            total_charges += (price * Decimal(str(charge.value))) / Decimal('100')
         print("Charge applied: ", charge.name)
         
             
