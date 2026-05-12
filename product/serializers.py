@@ -14,7 +14,7 @@ class FoodItemSerializer(serializers.ModelSerializer):
     images = FoodImageSerializer(many=True, read_only=True)
     class Meta:
         model = FoodItem
-        fields = ('id', 'name', 'category', 'description', 'price', 'images')
+        fields = ('id', 'name', 'category', 'short_details', 'description', 'price', 'images')
 
 
 
