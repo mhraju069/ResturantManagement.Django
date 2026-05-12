@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from payment.helper import final_price
 from .models import *
+from order.serializers import ChargesSerializer, CouponSerializer
+from order.models import Charges, Coupon
 
 
 class FoodImageSerializer(serializers.ModelSerializer):
@@ -34,11 +36,34 @@ class CartItemsSerializer(serializers.ModelSerializer):
 class ProductCartSerializer(serializers.ModelSerializer):
     cart_items = CartItemsSerializer(many=True, read_only=True)
     final_amount = serializers.SerializerMethodField()
-    coupon = serializers.CharField(max_length=20, required=False)
+    coupon = serializers.SerializerMethodField()
+    charges = serializers.SerializerMethodField()
+
     
     class Meta:
         model = ProductCart
-        fields = ('cart_items','final_amount','coupon')
+        fields = ('cart_items','final_amount','coupon','charges')
+
+    
+    def get_charges(self, obj):
+        charges = Charges.objects.filter(active=True)
+        return ChargesSerializer(charges, many=True).data
+        
+    def get_coupon(self, obj):
+        request = self.context.get('request')
+        if not request:
+            return None
+            
+        coupon_code = request.query_params.get('coupon') or request.data.get('coupon')
+        if not coupon_code:
+            return None
+            
+        try:
+            coupon_obj = Coupon.objects.get(code=coupon_code, active=True)
+            return CouponSerializer(coupon_obj).data
+        except Coupon.DoesNotExist:
+            return None
+        
 
     def get_final_amount(self, obj):
         request = self.context.get('request')

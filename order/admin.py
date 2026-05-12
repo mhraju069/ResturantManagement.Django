@@ -1,6 +1,6 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
-from .models import Order, OrderItem, Coupon, Charges
+from .models import *
 
 class OrderItemInline(TabularInline):
     model = OrderItem
@@ -33,3 +33,5 @@ class CouponAdmin(ModelAdmin):
 class ChargesAdmin(ModelAdmin):
     list_display = ('name', 'charge_type', 'value', 'active')
     list_filter = ('charge_type', 'active')
+
+admin.site.register(ApplyCoupon,ModelAdmin)
