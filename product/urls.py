@@ -5,4 +5,5 @@ urlpatterns = [
     path('food-items/', GetFoodItemApiView.as_view(), name='get_food_item'),
     path('cart-items/', GetcartItemsApiView.as_view(), name='get_cart_items'),
     path('cart-items/<str:action>/', UpdateCartApiView.as_view(), name='update_cart'),
+    path('menu/', GetMenuApiView.as_view(), name='get_menu'),
 ]

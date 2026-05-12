@@ -3,7 +3,7 @@ from .serializers import *
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import *
-
+from django.utils import timezone
 
 
 class GetFoodItemApiView(generics.ListAPIView):
@@ -109,3 +109,27 @@ class UpdateCartApiView(generics.GenericAPIView):
                 "success": False,
                 "message": str(e),
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+class GetMenuApiView(generics.GenericAPIView):
+    serializer_class = GetMenuSerializer
+    
+    def get(self, request, *args, **kwargs):
+        date_param = request.query_params.get('date')
+        target_date = date_param if date_param else timezone.now().date()
+        
+        try:
+            menu = Menu.objects.get(date=target_date)
+            serializer = self.get_serializer(menu)
+            return Response({
+                "success": True,
+                "message": "Menu items fetched successfully",
+                "data": serializer.data
+            })
+        except Menu.DoesNotExist:
+            return Response({
+                "success": False,
+                "message": "Menu items not found",
+            }, status=status.HTTP_404_NOT_FOUND)

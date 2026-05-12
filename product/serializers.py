@@ -3,10 +3,18 @@ from payment.helper import final_price
 from .models import *
 
 
+class FoodImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FoodImage
+        fields = ('image',)
+
+
+
 class FoodItemSerializer(serializers.ModelSerializer):
+    images = FoodImageSerializer(many=True, read_only=True)
     class Meta:
         model = FoodItem
-        exclude = ('is_active','created_at', 'updated_at')
+        fields = ('id', 'name', 'category', 'description', 'price', 'images')
 
 
 
@@ -51,4 +59,10 @@ class CartUpdateSerializer(serializers.Serializer):
     quantity = serializers.IntegerField()
 
     
-    
+
+
+class GetMenuSerializer(serializers.ModelSerializer):
+    foods = FoodItemSerializer(many=True, read_only=True)
+    class Meta:
+        model = Menu
+        fields = ('id','date','foods')
