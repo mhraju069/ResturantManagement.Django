@@ -14,6 +14,8 @@ class Order(models.Model):
         ('paid', 'Paid'),
         ('failed', 'Failed'),
         ('preparing', 'Preparing'),
+        ('ready', 'Ready'),
+        ('on-the-way', 'On The Way'),
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
     ]
