@@ -41,8 +41,15 @@ class Order(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.order_id:
-            count = Order.objects.count() + 1
-            self.order_id = f"ORD-{timezone.now().year}-{count:04d}"
+            year = timezone.now().year
+            prefix = f"ORD-{year}-"
+            last_order = Order.objects.filter(order_id__startswith=prefix).order_by('-order_id').first()
+            if last_order:
+                last_number = int(last_order.order_id.split('-')[-1])
+                new_number = last_number + 1
+            else:
+                new_number = 1
+            self.order_id = f"{prefix}{new_number:04d}"
         super().save(*args, **kwargs)
 
 
