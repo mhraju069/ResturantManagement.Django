@@ -92,7 +92,7 @@ def Place_order(data, request):
         # Record the coupon usage since the order is placed
         coupon_code = data.get('coupon')
         if coupon_code:
-            coupon = Coupon.objects.filter(code=coupon_code).first()
+            coupon = Coupon.objects.filter(code__iexact=coupon_code, active=True).first()
             if coupon and not ApplyCoupon.objects.filter(user=request.user, coupon=coupon).exists():
                 if coupon.discount_type == "fixed":
                     amount = Decimal(str(coupon.discount_value))
@@ -109,41 +109,42 @@ def Place_order(data, request):
 
 
 
-def final_price(request,total_amount,code=None):
+def final_price(request, total_amount, code=None):
     price = Decimal(str(total_amount))
 
-    coupon = Coupon.objects.filter(code=code).first()
-    applied = ApplyCoupon.objects.filter(user=request.user, coupon=coupon).first()
+    if code:
+        # Use iexact for case-insensitive matching and check if active
+        coupon = Coupon.objects.filter(code__iexact=code, active=True).first()
+        if coupon:
+            # Check if this user has already used this coupon
+            applied = ApplyCoupon.objects.filter(user=request.user, coupon=coupon).exists()
+            if not applied:
+                if coupon.discount_type == "fixed":
+                    amount = Decimal(str(coupon.discount_value))
+                else:
+                    amount = (price * Decimal(str(coupon.discount_value))) / Decimal('100')
 
-    #Apply cupon if not applied and cupon is present
-
-    if not applied and coupon:
-        if coupon.discount_type == "fixed":
-            amount = Decimal(str(coupon.discount_value))
+                price = price - amount
+                print(f"Coupon applied: {coupon.code}, discount: {amount}")
+            else:
+                print(f"Coupon {coupon.code} already used by user {request.user}")
         else:
-            amount = (price * Decimal(str(coupon.discount_value))) / Decimal('100')
+            print(f"Coupon {code} not found or inactive")
 
-        price = price - amount
-        print("Cupon applied: ", coupon.code, amount)
-
-
-    #Apply other charges
-
+    # Apply other charges
     charges = Charges.objects.filter(active=True)
-
     total_charges = Decimal('0')
 
     for charge in charges:
         if charge.charge_type == "fixed":
             total_charges += Decimal(str(charge.value))
         else:
+            # Charges are calculated on the discounted price
             total_charges += (price * Decimal(str(charge.value))) / Decimal('100')
-        print("Charge applied: ", charge.name)
-        
+        print(f"Charge applied: {charge.name}")
             
-    final_price = price + total_charges
-    
-    return final_price
+    calculated_total = price + total_charges
+    return calculated_total
 
 
 
