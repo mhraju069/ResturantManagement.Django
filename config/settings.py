@@ -272,6 +272,17 @@ UNFOLD = {
                     },
                 ],
             },
+            {
+                "title": _("System"),
+                "separator": True,
+                "items": [
+                    {
+                        "title": _("Activity Log"),
+                        "icon": "history",
+                        "link": "/admin/activity-log/",
+                    },
+                ],
+            },
         ],
     },
 }

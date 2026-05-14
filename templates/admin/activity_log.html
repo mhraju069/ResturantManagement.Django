@@ -1,0 +1,301 @@
+{% extends "unfold/layouts/base.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<div class="px-4 py-3 bg-gray-50 border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+    <div class="flex items-center text-sm font-medium text-gray-500 dark:text-gray-400">
+        <a href="/admin/" class="hover:text-gray-700 dark:hover:text-gray-200">Dashboard</a>
+        <svg class="w-5 h-5 mx-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+        </svg>
+        <span class="text-gray-900 dark:text-gray-100">Activity History</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    .activity-container {
+        font-family: 'Inter', sans-serif;
+        padding: 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .vd-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+    }
+
+    .dark .vd-card {
+        background: #1f2937;
+        border-color: #374151;
+    }
+
+    .vd-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 24px;
+    }
+
+    .dark .vd-title {
+        color: #f9fafb;
+    }
+
+    /* ── Search and Filter ──────────────────────────────── */
+    .filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 24px;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .search-input {
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: .875rem;
+        width: 300px;
+        outline: none;
+        transition: border-color .15s;
+    }
+
+    .dark .search-input {
+        background: #111827;
+        border-color: #374151;
+        color: #fff;
+    }
+
+    .search-input:focus {
+        border-color: #f97316;
+    }
+
+    .filter-tabs {
+        display: flex;
+        gap: 8px;
+        background: #f3f4f6;
+        padding: 4px;
+        border-radius: 10px;
+    }
+
+    .dark .filter-tabs {
+        background: #111827;
+    }
+
+    .filter-tab {
+        padding: 6px 16px;
+        font-size: .75rem;
+        font-weight: 600;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #6b7280;
+        transition: all .15s;
+    }
+
+    .filter-tab:hover {
+        color: #111827;
+    }
+
+    .dark .filter-tab:hover {
+        color: #f9fafb;
+    }
+
+    .filter-tab.active {
+        background: #fff;
+        color: #111827;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
+    }
+
+    .dark .filter-tab.active {
+        background: #374151;
+        color: #f9fafb;
+    }
+
+    /* ── Activity Items ─────────────────────────────────── */
+    .vd-activity-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        border-bottom: 1px solid #f3f4f6;
+        transition: background .15s;
+    }
+
+    .dark .vd-activity-item {
+        border-color: #374151;
+    }
+
+    .vd-activity-item:hover {
+        background: #f9fafb;
+    }
+
+    .dark .vd-activity-item:hover {
+        background: rgba(255, 255, 255, .02);
+    }
+
+    .vd-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .vd-avatar-green { background: #22c55e; }
+    .vd-avatar-blue { background: #3b82f6; }
+    .vd-avatar-gray { background: #6b7280; }
+    .vd-avatar-purple { background: #a855f7; }
+
+    .vd-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: .7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .vd-badge-green { background: #d1fae5; color: #065f46; }
+    .vd-badge-yellow { background: #fef3c7; color: #92400e; }
+    .vd-badge-red { background: #fee2e2; color: #991b1b; }
+
+    .dark .vd-badge-green { background: rgba(16, 185, 129, .15); color: #34d399; }
+    .dark .vd-badge-yellow { background: rgba(245, 158, 11, .15); color: #fbbf24; }
+    .dark .vd-badge-red { background: rgba(239, 68, 68, .15); color: #f87171; }
+
+    /* ── Pagination ─────────────────────────────────────── */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 32px;
+    }
+
+    .page-link {
+        padding: 8px 14px;
+        border-radius: 8px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        color: #374151;
+        text-decoration: none;
+        font-size: .875rem;
+        font-weight: 600;
+        transition: all .15s;
+    }
+
+    .dark .page-link {
+        background: #1f2937;
+        border-color: #374151;
+        color: #d1d5db;
+    }
+
+    .page-link:hover:not(.disabled) {
+        border-color: #f97316;
+        color: #f97316;
+    }
+
+    .page-link.active {
+        background: #f97316;
+        color: #fff;
+        border-color: #f97316;
+    }
+
+    .page-link.disabled {
+        opacity: .5;
+        cursor: not-allowed;
+    }
+</style>
+
+<div class="activity-container">
+    <div class="vd-card">
+        <h1 class="vd-title">Activity History</h1>
+
+        <!-- Search and Filter Bar -->
+        <div class="filter-bar">
+            <div class="filter-tabs">
+                <a href="?q={{ search_query }}" class="filter-tab {% if not activity_type %}active{% endif %}">All</a>
+                <a href="?type=signup&q={{ search_query }}" class="filter-tab {% if activity_type == 'signup' %}active{% endif %}">Signups</a>
+                <a href="?type=order&q={{ search_query }}" class="filter-tab {% if activity_type == 'order' %}active{% endif %}">Orders</a>
+                <a href="?type=admin&q={{ search_query }}" class="filter-tab {% if activity_type == 'admin' %}active{% endif %}">Admin Actions</a>
+            </div>
+
+            <form method="GET" style="display: flex; gap: 8px;">
+                <input type="hidden" name="type" value="{{ activity_type }}">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search by name, email..." class="search-input">
+                <button type="submit" style="background: #f97316; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">Search</button>
+            </form>
+        </div>
+
+        <!-- Activity List -->
+        <div style="display: flex; flex-direction: column;">
+            {% for act in page_obj %}
+            <div class="vd-activity-item">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div class="vd-avatar {{ act.color }}">
+                        {% if act.image_url %}
+                        <img src="{{ act.image_url }}" alt="{{ act.name }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                        {% else %}
+                        {{ act.name|slice:":2"|upper }}
+                        {% endif %}
+                    </div>
+                    <div>
+                        <p style="font-size: .95rem; font-weight: 700;">
+                            <a href="{{ act.link }}" style="text-decoration: none; color: inherit;" class="hover:text-orange-500">{{ act.name }}</a>
+                        </p>
+                        <p style="font-size: .8rem; color: #6b7280;">{{ act.action }}</p>
+                        <p style="font-size: .75rem; color: #9ca3af; margin-top: 2px;">{{ act.date|date:"M d, Y - H:i" }}</p>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="vd-badge {{ act.badge_class }}">{{ act.status }}</span>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align: center; padding: 60px 0;">
+                <p style="color: #9ca3af; font-size: 1rem;">No matching activity found.</p>
+                <a href="/admin/activity-log/" style="color: #f97316; font-size: .875rem; text-decoration: none; margin-top: 8px; display: inline-block;">Clear all filters</a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&type={{ activity_type }}" class="page-link">Previous</a>
+            {% else %}
+            <span class="page-link disabled">Previous</span>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <span class="page-link active">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a href="?page={{ num }}&q={{ search_query }}&type={{ activity_type }}" class="page-link">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&type={{ activity_type }}" class="page-link">Next</a>
+            {% else %}
+            <span class="page-link disabled">Next</span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

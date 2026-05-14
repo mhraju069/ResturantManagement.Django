@@ -44,3 +44,11 @@ class AddLikeToFeedback(generics.GenericAPIView):
             return Response({"message": "Unlike successfully", "likes" : feedback.likes.count()}, status=status.HTTP_200_OK)
         feedback.likes.add(request.user)
         return Response({"message": "Like successfully", "likes" : feedback.likes.count()}, status=status.HTTP_200_OK)
+
+
+
+
+class SubscribeNewsLetterListCreate(generics.ListCreateAPIView):
+    queryset = SubscribeNewsLetter.objects.filter(is_active=True)
+    serializer_class = SubscribeNewsLetterSerializer
+    permission_classes = [AllowAny]
