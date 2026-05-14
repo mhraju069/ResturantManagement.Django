@@ -12,6 +12,7 @@ class OrderAdmin(ModelAdmin):
     list_display = ('order_id', 'user', 'total_amount', 'status', 'created_at')
     list_filter = ('status', 'created_at')
     search_fields = ('order_id', 'user__email', 'first_name', 'last_name')
+    ordering = ('-created_at',)
     inlines = [OrderItemInline]
     
     actions = ['mark_as_paid', 'mark_as_delivered']
