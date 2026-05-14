@@ -101,7 +101,7 @@ def Place_order(data, request):
                 ApplyCoupon.objects.create(user=request.user, coupon=coupon, amount=amount)
 
         # Clear cart
-        # cart_items.delete()
+        cart_items.delete()
         return {"status": True, "order": order}
     else:
         return {"status": False, "errors": serializer.errors}
