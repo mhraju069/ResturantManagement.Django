@@ -3,7 +3,10 @@ from django.urls import path, include
 from . import swagger
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 
+from config.admin import admin_activity_log
+
 urlpatterns = [
+    path('admin/activity-log/', admin_activity_log, name='admin_activity_log'),
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
     path("auth/api/v1/", include("authentication.urls")),

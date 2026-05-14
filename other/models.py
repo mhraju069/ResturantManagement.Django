@@ -56,3 +56,18 @@ class SupportMessage(models.Model):
     
     class Meta:
         verbose_name_plural = "Support Messages"
+
+
+
+
+class SubscribeNewsLetter(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.email
+    
+    class Meta:
+        verbose_name_plural = "Subscribe NewsLetter"

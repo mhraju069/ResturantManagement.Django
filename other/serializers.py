@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import FeedBack, ContactInfo, SupportMessage
+from .models import *
 
 class FeedBackSerializer(serializers.ModelSerializer):
     likes = serializers.SerializerMethodField()
@@ -24,3 +24,9 @@ class SupportMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupportMessage
         exclude = ('id','created_at',)
+
+
+class SubscribeNewsLetterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubscribeNewsLetter
+        exclude = ('id','is_active','created_at',)

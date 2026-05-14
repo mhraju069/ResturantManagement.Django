@@ -249,6 +249,15 @@
         color: #ea580c;
     }
 
+    /* ── Trend Colors ────────────────────────────────────── */
+    .vd-trend-up {
+        color: #22c55e !important;
+    }
+
+    .vd-trend-down {
+        color: #ef4444 !important;
+    }
+
     .dark .vd-icon-btn:hover {
         background: #374151;
         color: #fb923c;
@@ -278,6 +287,14 @@
 
     .vd-avatar-gray {
         background: #6b7280;
+    }
+
+    .vd-avatar-blue {
+        background: #3b82f6;
+    }
+
+    .vd-avatar-purple {
+        background: #a855f7;
     }
 
     /* ── Chart bar ───────────────────────────────────────── */
@@ -595,7 +612,7 @@
         <div class="vd-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <p class="vd-title">Recent Activity</p>
-                <a href="/admin/authentication/user/" class="vd-link">Manage →</a>
+                <a href="/admin/activity-log/" class="vd-link">See All →</a>
             </div>
             <div style="display: flex; flex-direction: column; gap: 14px;">
                 {% for act in recent_activity %}
@@ -610,17 +627,13 @@
                             {% endif %}
                         </div>
                         <div>
-                            <p class="vd-activity-name"><a href="/admin/authentication/user/{{ act.id }}/change/"
+                            <p class="vd-activity-name"><a href="{{ act.link }}"
                                     class="vd-clickable-name">{{ act.name }}</a></p>
                             <p class="vd-sub">{{ act.action }}</p>
                         </div>
                     </div>
                     <div style="text-align: right;">
-                        {% if act.status == 'ACTIVE' %}
-                        <span class="vd-badge vd-badge-green">{{ act.status }}</span>
-                        {% else %}
-                        <span class="vd-badge vd-badge-yellow">{{ act.status }}</span>
-                        {% endif %}
+                        <span class="vd-badge {{ act.badge_class }}">{{ act.status }}</span>
                     </div>
                 </div>
                 {% endfor %}
