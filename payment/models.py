@@ -1,7 +1,5 @@
 from django.db import models
-from django.utils import timezone
 from django.conf import settings
-from subscription.models import Plan
 from order.models import Order
 
 class Payments(models.Model):
@@ -11,7 +9,6 @@ class Payments(models.Model):
         ('failed','Failed'),
     )
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
-    plan = models.ForeignKey(Plan,on_delete=models.CASCADE, null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     status = models.CharField(max_length=20,choices=STATUS,default='pending')

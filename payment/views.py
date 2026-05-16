@@ -27,6 +27,7 @@ class GetPaymentLinkView(generics.GenericAPIView):
         payment = Payments.objects.create(
             user=request.user,
             plan=plan,
+            amount=plan.price,
             status='pending'
         )
 
@@ -181,7 +182,7 @@ class StripeWebhookView(APIView):
                     payment = Payments.objects.get(id=payment_id)
                     print(f"Update Start: Payment {payment.id}")
                     
-                    if payment.status == 'paid':
+                    if payment.status == 'paid' and payment.invoice:
                         print(f"Skipping: Payment {payment.id} already processed.")
                         return HttpResponse(status=status.HTTP_200_OK)
 

@@ -177,6 +177,10 @@ def Create_payment_intent(data, request, order):
         )
 
         if intent.status == 'succeeded':
+            payment.status = 'paid'
+            payment.tnxid = intent.id
+            payment.save()
+
             # Update order status
             order.status = 'paid'
             order.save()

@@ -573,7 +573,6 @@
             </div>
         </div>
 
-        <!-- Recent Orders -->
         <div class="vd-card" style="display: flex; flex-direction: column;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <p class="vd-title">Recent Orders</p>
@@ -587,7 +586,7 @@
                             <p class="vd-order-name">
                                 {{ order.first_name }} {{ order.last_name }}
                             </p>
-                            <p class="vd-sub" style="margin-top: 2px;">{{ order.city|default:"Delivery" }} &bull; {{ order.created_at|date:"d M Y, h:i A" }}</p>
+                            <p class="vd-sub" style="margin-top: 2px;">{{ order.order_id|default:"Order" }} &bull; {{ order.city|default:"Delivery" }} &bull; {{ order.created_at|date:"d M Y, h:i A" }}</p>
                         </div>
                         {% if order.status == 'paid' %}
                         <span class="vd-badge vd-badge-green">{{ order.status }}</span>
@@ -599,7 +598,7 @@
                     </div>
                 </a>
                 {% empty %}
-                <p class="vd-sub" style="text-align:center; padding: 24px 0;">No upcoming bookings</p>
+                <p class="vd-sub" style="text-align:center; padding: 24px 0;">No recent orders</p>
                 {% endfor %}
             </div>
         </div>
