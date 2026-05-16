@@ -10,25 +10,25 @@ from datetime import timedelta
 import json
 
 
-def _get_revenue_by_period(paid_orders, days):
+def _get_revenue_by_period(paid_payments, days):
     """Return list of {label, value} dicts for the given number of past days."""
     now = timezone.now()
     data = []
     if days == 7:
         for i in range(6, -1, -1):
             day = now - timedelta(days=i)
-            total = paid_orders.filter(
+            total = paid_payments.filter(
                 created_at__date=day.date()
-            ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+            ).aggregate(Sum('amount'))['amount__sum'] or 0
             data.append({"label": day.strftime("%a"), "value": float(total)})
     elif days == 30:
         # Weekly buckets over 4 weeks
         for i in range(3, -1, -1):
             week_start = now - timedelta(days=(i + 1) * 7)
             week_end   = now - timedelta(days=i * 7)
-            total = paid_orders.filter(
+            total = paid_payments.filter(
                 created_at__gte=week_start, created_at__lt=week_end
-            ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+            ).aggregate(Sum('amount'))['amount__sum'] or 0
             data.append({"label": f"W{4 - i}", "value": float(total)})
     else:
         # 12 months
@@ -49,9 +49,9 @@ def _get_revenue_by_period(paid_orders, days):
                 next_year_num += 1
             next_month = now.replace(year=next_year_num, month=next_month_num, day=1,
                                      hour=0, minute=0, second=0, microsecond=0)
-            total = paid_orders.filter(
+            total = paid_payments.filter(
                 created_at__gte=month_start, created_at__lt=next_month
-            ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+            ).aggregate(Sum('amount'))['amount__sum'] or 0
             data.append({"label": month_start.strftime("%b"), "value": float(total)})
     return data
 
@@ -65,7 +65,7 @@ def _add_heights(data):
 
 def _get_top_foods(days=None):
     """Return top 10 most ordered food items by quantity for the given period."""
-    qs = OrderItem.objects.filter(order__status='paid')
+    qs = OrderItem.objects.exclude(order__status__in=['pending', 'failed', 'cancelled'])
     if days:
         now = timezone.now()
         start_date = now - timedelta(days=days)
@@ -104,21 +104,21 @@ def dashboard_callback(request, context):
     thirty_days_ago = now - timedelta(days=30)
 
     # ── Stats ──────────────────────────────────────────────
-    paid_orders = Order.objects.filter(status='paid')
-    total_revenue = paid_orders.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    paid_payments = Payments.objects.filter(status='paid')
+    total_revenue = paid_payments.aggregate(Sum('amount'))['amount__sum'] or 0
     total_orders  = Order.objects.count()
     active_users  = User.objects.filter(is_active=True).count()
     pending_count = Order.objects.filter(status='pending').count()
 
     # ── Chart data for all three periods ──────────────────
-    chart_7d  = _add_heights(_get_revenue_by_period(paid_orders, 7))
-    chart_1m  = _add_heights(_get_revenue_by_period(paid_orders, 30))
-    chart_1y  = _add_heights(_get_revenue_by_period(paid_orders, 365))
+    chart_7d  = _add_heights(_get_revenue_by_period(paid_payments, 7))
+    chart_1m  = _add_heights(_get_revenue_by_period(paid_payments, 30))
+    chart_1y  = _add_heights(_get_revenue_by_period(paid_payments, 365))
 
-    # ── Upcoming orders ────────────────────────────────────
+    # ── Recent non-pending orders ──────────────────────────
     upcoming_orders = (
-        Order.objects.filter(status__in=['preparing', 'paid', ])
-        .order_by('-created_at')[:5]
+        Order.objects.exclude(status='pending')
+        .order_by('-created_at')
     )
 
     # ── Recent invoices WITH Stripe link ──────────────────
@@ -240,8 +240,8 @@ def dashboard_callback(request, context):
     # 2. Total Revenue (This Month vs Last Month)
     this_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     last_month_start = (this_month_start - timedelta(days=1)).replace(day=1)
-    rev_this_month = Order.objects.filter(status='paid', created_at__gte=this_month_start).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
-    rev_last_month = Order.objects.filter(status='paid', created_at__gte=last_month_start, created_at__lt=this_month_start).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    rev_this_month = Payments.objects.filter(status='paid', created_at__gte=this_month_start).aggregate(Sum('amount'))['amount__sum'] or 0
+    rev_last_month = Payments.objects.filter(status='paid', created_at__gte=last_month_start, created_at__lt=this_month_start).aggregate(Sum('amount'))['amount__sum'] or 0
     rev_change = get_percent_change(rev_this_month, rev_last_month)
 
     # 3. Active Users (Last 24H vs Prev 24H)
@@ -255,13 +255,13 @@ def dashboard_callback(request, context):
     new_orders_change = get_percent_change(new_orders_24h, new_orders_prev_24h)
 
     # ── Chart data ────────────────────────────────────────
-    paid_orders = Order.objects.filter(status='paid')
-    chart_7d  = _add_heights(_get_revenue_by_period(paid_orders, 7))
-    chart_1m  = _add_heights(_get_revenue_by_period(paid_orders, 30))
-    chart_1y  = _add_heights(_get_revenue_by_period(paid_orders, 365))
+    paid_payments = Payments.objects.filter(status='paid')
+    chart_7d  = _add_heights(_get_revenue_by_period(paid_payments, 7))
+    chart_1m  = _add_heights(_get_revenue_by_period(paid_payments, 30))
+    chart_1y  = _add_heights(_get_revenue_by_period(paid_payments, 365))
 
     # ── Lists ─────────────────────────────────────────────
-    upcoming_orders = Order.objects.filter(status__in=['preparing', 'paid']).order_by('-created_at')[:5]
+    upcoming_orders = Order.objects.exclude(status='pending').order_by('-created_at')
     recent_payments = Payments.objects.filter(status='paid', order__isnull=False).select_related('order', 'user').order_by('-created_at')[:5]
     recent_activity = get_activity_data(limit=8)
 
