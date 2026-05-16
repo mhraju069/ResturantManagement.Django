@@ -109,6 +109,8 @@ def Place_order(data, request):
 
 
 
+from rest_framework import exceptions
+
 def final_price(request, total_amount, code=None):
     price = Decimal(str(total_amount))
 
@@ -127,9 +129,9 @@ def final_price(request, total_amount, code=None):
                 price = price - amount
                 print(f"Coupon applied: {coupon.code}, discount: {amount}")
             else:
-                print(f"Coupon {coupon.code} already used by user {request.user}")
+                raise exceptions.ValidationError("You have already used this coupon code.")
         else:
-            print(f"Coupon {code} not found or inactive")
+            raise exceptions.ValidationError("Invalid or inactive coupon code.")
 
     # Apply other charges
     charges = Charges.objects.filter(active=True)
