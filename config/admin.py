@@ -456,7 +456,7 @@ def get_dashboard_live_data():
             "user_email": p.user.email if p.user else "",
             "amount": float(p.amount),
             "created_at": p.created_at.isoformat(),
-            "stripe_link": f"https://dashboard.stripe.com/payments/{p.payment_intent_id}" if p.payment_intent_id else "#"
+            "stripe_link": f"https://dashboard.stripe.com/payments/{p.tnxid}" if p.tnxid else "#"
         })
 
     return {

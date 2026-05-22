@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Order is Ready!</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; border: 1px solid #e5e7eb;">
+        <!-- Header -->
+        <tr>
+            <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 32px; text-align: center;">
+                <h1 style="color: #ffffff; font-size: 24px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 1px;">Ready for Pick Up!</h1>
+                <p style="color: #d1fae5; font-size: 14px; margin: 8px 0 0 0; font-weight: 500;">Hi {{ order.first_name }}, your food is hot and ready!</p>
+            </td>
+        </tr>
+        
+        <!-- Content -->
+        <tr>
+            <td style="padding: 32px; color: #374151;">
+                <p style="font-size: 16px; line-height: 1.6; margin-top: 0; color: #4b5563;">Great news! Your order <strong>{{ order.order_id }}</strong> has been prepared and is now ready for pick up or delivery. Please find the details below:</p>
+                
+                <!-- Order Info Card -->
+                <table width="100%" style="background-color: #f9fafb; border-radius: 8px; padding: 16px; margin: 24px 0; border: 1px solid #f3f4f6;">
+                    <tr>
+                        <td style="font-size: 13px; font-weight: 700; color: #6b7280; text-transform: uppercase;">Order Number</td>
+                        <td align="right" style="font-size: 14px; font-weight: 800; color: #059669;">{{ order.order_id }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-size: 13px; font-weight: 700; color: #6b7280; text-transform: uppercase; padding-top: 8px;">Current Status</td>
+                        <td align="right" style="font-size: 14px; font-weight: 700; color: #10b981; padding-top: 8px;">READY</td>
+                    </tr>
+                </table>
+                
+                <!-- Items Table -->
+                <h3 style="font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f3f4f6; padding-bottom: 8px; margin: 32px 0 16px 0; color: #111827;">Your Items</h3>
+                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+                    {% for item in order.order_items.all %}
+                    <tr>
+                        <td style="padding: 10px 0; border-bottom: 1px solid #f3f4f6;">
+                            <span style="font-size: 14px; font-weight: 700; color: #111827;">x{{ item.quantity }} {{ item.food_item.name }}</span>
+                        </td>
+                        <td align="right" style="padding: 10px 0; border-bottom: 1px solid #f3f4f6; font-size: 14px; font-weight: 700; color: #374151;">
+                            ${{ item.price }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr>
+                        <td style="padding: 16px 0 0 0; font-size: 16px; font-weight: 800; color: #111827;">Total Paid</td>
+                        <td align="right" style="padding: 16px 0 0 0; font-size: 18px; font-weight: 800; color: #059669;">
+                            ${{ order.total_amount }}
+                        </td>
+                    </tr>
+                </table>
+                
+                <!-- Pickup/Delivery Location Card -->
+                <h3 style="font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f3f4f6; padding-bottom: 8px; margin: 32px 0 16px 0; color: #111827;">Delivery / Pickup Info</h3>
+                <p style="font-size: 13px; line-height: 1.5; color: #4b5563; background-color: #f9fafb; border-radius: 8px; padding: 16px; margin: 0; border: 1px solid #f3f4f6;">
+                    <strong>{{ order.first_name }} {{ order.last_name }}</strong><br>
+                    {{ order.address }}<br>
+                    {{ order.city }}, {{ order.state }} {{ order.zip_code }}<br>
+                    Phone: {{ order.phone }}
+                </p>
+            </td>
+        </tr>
+        
+        <!-- Footer -->
+        <tr>
+            <td style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb; font-size: 12px; color: #9ca3af;">
+                <p style="margin: 0;">Varivo Restaurant Management System &bull; All Rights Reserved.</p>
+                <p style="margin: 4px 0 0 0;">If you have any questions, please contact us at support@varivo.com</p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
