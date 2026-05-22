@@ -11,12 +11,13 @@ from product.models import FoodItem
 class Order(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
-        ('paid', 'Paid'),
+        ('NEW', 'New'),
+        ('ACCEPTED', 'Accepted'),
+        ('PREPARING', 'Preparing'),
+        ('READY', 'Ready'),
+        ('PICKED_UP', 'Picked Up'),
+        ('COMPLETED', 'Completed'),
         ('failed', 'Failed'),
-        ('preparing', 'Preparing'),
-        ('ready', 'Ready'),
-        ('on-the-way', 'On The Way'),
-        ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

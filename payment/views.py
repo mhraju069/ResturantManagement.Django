@@ -232,7 +232,7 @@ class StripeWebhookView(APIView):
                     
                     # Handle Order if present
                     if payment.order:
-                        payment.order.status = 'paid'
+                        payment.order.status = 'NEW'
                         payment.order.save()
                         print(f"Order {payment.order.id} marked as paid via webhook.")
                     

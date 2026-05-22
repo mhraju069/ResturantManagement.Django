@@ -14,6 +14,7 @@
 <style>
     /* ── Typography ─────────────────────────────────────── */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
 
     #dashboard-root {
         font-family: 'Inter', sans-serif;
@@ -520,10 +521,121 @@
         border-radius: 3px;
         transition: width .5s ease;
     }
+
+    /* ── Notifications ───────────────────────────────────── */
+    #noti-bell-btn {
+        background: #fff;
+        border-color: #e5e7eb;
+        transition: all 0.2s;
+    }
+    .dark #noti-bell-btn {
+        background: #1f2937;
+        border-color: #374151;
+    }
+    #noti-bell-btn:hover {
+        background: #f3f4f6;
+    }
+    .dark #noti-bell-btn:hover {
+        background: #374151;
+    }
+    #noti-dropdown {
+        background: #fff;
+        border-color: #e5e7eb;
+    }
+    .dark #noti-dropdown {
+        background: #1f2937;
+        border-color: #374151;
+    }
+    .noti-item {
+        padding: 12px;
+        border-radius: 8px;
+        background: #f9fafb;
+        border: 1px solid #f3f4f6;
+        transition: all 0.15s;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        cursor: pointer;
+        position: relative;
+    }
+    .dark .noti-item {
+        background: #111827;
+        border-color: #1f2937;
+    }
+    .noti-item:hover {
+        border-color: #fed7aa;
+    }
+    .dark .noti-item:hover {
+        border-color: #ea580c;
+    }
+    .noti-item.unread {
+        border-left: 3px solid #f97316;
+        background: #fff8f5;
+    }
+    .dark .noti-item.unread {
+        background: #1c1917;
+        border-left-color: #ea580c;
+    }
+    .noti-title {
+        font-size: 0.775rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+    }
+    .dark .noti-title {
+        color: #f9fafb;
+    }
+    .noti-message {
+        font-size: 0.725rem;
+        color: #4b5563;
+        margin: 0;
+        line-height: 1.4;
+    }
+    .dark .noti-message {
+        color: #9ca3af;
+    }
+    .noti-time {
+        font-size: 0.625rem;
+        color: #9ca3af;
+        margin: 0;
+        text-align: right;
+    }
 </style>
 
 <div id="dashboard-root"
     style="padding: 28px 32px; min-height: 100vh; display: flex; flex-direction: column; gap: 24px;">
+
+    <!-- ── Dashboard Header with Notifications ────────────── -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div>
+            <h1 class="vd-title" style="font-size: 1.75rem; font-weight: 800; margin: 0;">Varivo Dashboard</h1>
+            <p class="vd-sub" style="margin-top: 4px;">Welcome back, {{ user.first_name|default:user.email }}</p>
+        </div>
+        <!-- Notification Widget -->
+        <div style="position: relative; z-index: 50;" id="admin-notifications-widget">
+            <button id="noti-bell-btn" class="vd-card" style="padding: 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid #e5e7eb; cursor: pointer;">
+                <span class="material-symbols-outlined" style="font-size: 24px; color: #4b5563;">notifications</span>
+                <span id="noti-badge" style="position: absolute; top: -2px; right: -2px; background: #ef4444; color: #fff; font-size: 10px; font-weight: 700; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; border: 2px solid #fff;">0</span>
+            </button>
+            
+            <!-- Dropdown Menu -->
+            <div id="noti-dropdown" class="vd-card" style="display: none; position: absolute; right: 0; top: 52px; width: 360px; max-height: 520px; z-index: 100; padding: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); flex-direction: column; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px; margin-bottom: 4px;" class="dark:border-gray-700">
+                    <p class="vd-title" style="font-size: 14px; font-weight: 700; margin: 0;">Notifications</p>
+                    <button id="mark-all-read-btn" style="font-size: 11px; font-weight: 600; color: #f97316; background: none; border: none; cursor: pointer;">Mark all as read</button>
+                </div>
+                <div id="noti-list" style="display: flex; flex-direction: column; gap: 8px; overflow-y: auto; max-height: 380px;">
+                    <!-- Notifications will be rendered here dynamically -->
+                </div>
+                <div style="border-top: 1px solid #f3f4f6; padding-top: 8px; margin-top: 4px; display: flex; justify-content: center;" class="dark:border-gray-700">
+                    <a href="/admin/notify/notification/" style="font-size: 11px; font-weight: 600; color: #f97316; text-decoration: none; display: flex; align-items: center; gap: 4px; padding: 6px 12px; border: 1px solid #f97316; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.background='#f97316'; this.style.color='#fff';" onmouseout="this.style.background='none'; this.style.color='#f97316';">
+                        <span class="material-symbols-outlined" style="font-size: 14px;">database</span>
+                        Manage Notification Data
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- ── KPI Cards ─────────────────────────────────────── -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
@@ -536,8 +648,8 @@
                     <span class="vd-sub" style="font-size:.6rem; font-weight:700;">LIVE</span>
                 </div>
             </div>
-            <p class="vd-stat-value">{{ stat.value }}</p>
-            <p class="vd-sub {{ stat.color }}" style="margin-top: 8px; font-weight: 600;">{{ stat.change }}</p>
+            <p class="vd-stat-value" id="stat-val-{{ stat.title|slugify }}">{{ stat.value }}</p>
+            <p class="vd-sub {{ stat.color }}" id="stat-change-{{ stat.title|slugify }}" style="margin-top: 8px; font-weight: 600;">{{ stat.change }}</p>
         </div>
         {% endfor %}
     </div>
@@ -578,7 +690,7 @@
                 <p class="vd-title">Recent Orders</p>
                 <a href="/admin/order/order/" class="vd-link">View All →</a>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto;">
+            <div id="live-recent-orders-list" style="display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto;">
                 {% for order in upcoming_orders %}
                 <a href="/admin/order/order/{{ order.id }}/change/" style="text-decoration:none; display:block;">
                     <div class="vd-order-item">
@@ -588,10 +700,20 @@
                             </p>
                             <p class="vd-sub" style="margin-top: 2px;">{{ order.order_id|default:"Order" }} &bull; {{ order.city|default:"Delivery" }} &bull; {{ order.created_at|date:"d M Y, h:i A" }}</p>
                         </div>
-                        {% if order.status == 'paid' %}
-                        <span class="vd-badge vd-badge-green">{{ order.status }}</span>
+                        {% if order.status == 'NEW' %}
+                        <span class="vd-badge vd-badge-yellow">New</span>
+                        {% elif order.status == 'ACCEPTED' %}
+                        <span class="vd-badge vd-badge-green">Accepted</span>
+                        {% elif order.status == 'PREPARING' %}
+                        <span class="vd-badge vd-badge-yellow">Preparing</span>
+                        {% elif order.status == 'READY' %}
+                        <span class="vd-badge vd-badge-green">Ready</span>
+                        {% elif order.status == 'PICKED_UP' %}
+                        <span class="vd-badge vd-badge-green">Picked Up</span>
+                        {% elif order.status == 'COMPLETED' %}
+                        <span class="vd-badge vd-badge-green">Completed</span>
                         {% elif order.status == 'pending' %}
-                        <span class="vd-badge vd-badge-yellow">{{ order.status }}</span>
+                        <span class="vd-badge vd-badge-yellow">Pending</span>
                         {% else %}
                         <span class="vd-badge vd-badge-red">{{ order.status }}</span>
                         {% endif %}
@@ -613,7 +735,7 @@
                 <p class="vd-title">Recent Activity</p>
                 <a href="/admin/activity-log/" class="vd-link">See All →</a>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div id="live-recent-activity-list" style="display: flex; flex-direction: column; gap: 14px;">
                 {% for act in recent_activity %}
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -656,7 +778,7 @@
                             <th style="text-align:right;">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="live-recent-invoices-tbody">
                         {% for pmt in recent_payments %}
                         <tr>
                             <td style="padding-right: 16px;">
@@ -895,6 +1017,422 @@
             </tr>`;
         }).join('');
     }
+</script>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
+
+<script>
+    // Firebase Web Config
+    const firebaseConfig = {
+        apiKey: "{{ firebase_config.apiKey }}",
+        authDomain: "{{ firebase_config.authDomain }}",
+        projectId: "{{ firebase_config.projectId }}",
+        storageBucket: "{{ firebase_config.storageBucket }}",
+        messagingSenderId: "{{ firebase_config.messagingSenderId }}",
+        appId: "{{ firebase_config.appId }}",
+        measurementId: "{{ firebase_config.measurementId }}"
+    };
+    const vapidKey = "{{ firebase_config.vapidKey }}";
+    
+    // Notification UI Elements
+    const notiBellBtn = document.getElementById('noti-bell-btn');
+    const notiDropdown = document.getElementById('noti-dropdown');
+    const notiBadge = document.getElementById('noti-badge');
+    const notiList = document.getElementById('noti-list');
+    const markAllReadBtn = document.getElementById('mark-all-read-btn');
+
+    // Toggle dropdown visibility
+    notiBellBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = notiDropdown.style.display === 'none';
+        notiDropdown.style.display = isHidden ? 'flex' : 'none';
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!notiDropdown.contains(e.target) && e.target !== notiBellBtn && !notiBellBtn.contains(e.target)) {
+            notiDropdown.style.display = 'none';
+        }
+    });
+
+    // Fetch notifications list from api with polling fallback
+    let knownNotificationIds = new Set();
+    let isFirstLoad = true;
+
+    function fetchNotifications() {
+        fetch('/notify/api/v1/list/')
+        .then(res => res.json())
+        .then(data => {
+            const notifications = data.results || data;
+            let hasNew = false;
+            
+            notifications.forEach(noti => {
+                if (!knownNotificationIds.has(noti.id)) {
+                    knownNotificationIds.add(noti.id);
+                    // Only show popups/sounds for new unread notifications after page is already loaded
+                    if (!isFirstLoad && !noti.is_read) {
+                        showNotificationToast(noti.title, noti.message, noti.order_id);
+                        hasNew = true;
+                    }
+                }
+            });
+
+            isFirstLoad = false;
+            renderNotifications(notifications);
+        })
+        .catch(err => console.error("Error fetching notifications:", err));
+    }
+
+    // Auto-poll every 4 seconds to catch new database notifications in real-time
+    setInterval(fetchNotifications, 4000);
+
+    function renderNotifications(notifications) {
+        if (!notifications || notifications.length === 0) {
+            notiList.innerHTML = `<p class="vd-sub" style="text-align:center; padding: 16px 0; font-size:11px;">No notifications yet</p>`;
+            notiBadge.style.display = 'none';
+            return;
+        }
+
+        let unreadCount = 0;
+        notiList.innerHTML = notifications.map(noti => {
+            if (!noti.is_read) unreadCount++;
+            const date = new Date(noti.created_at);
+            const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' &bull; ' + date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            
+            const orderIdStr = noti.order_id ? `'${noti.order_id}'` : 'null';
+            return `
+                <div class="noti-item ${noti.is_read ? '' : 'unread'}" onclick="markAsRead(${noti.id}, this, ${orderIdStr})">
+                    <p class="noti-title">${noti.title}</p>
+                    <p class="noti-message">${noti.message}</p>
+                    <p class="noti-time">${timeStr}</p>
+                </div>
+            `;
+        }).join('');
+
+        if (unreadCount > 0) {
+            notiBadge.textContent = unreadCount;
+            notiBadge.style.display = 'flex';
+        } else {
+            notiBadge.style.display = 'none';
+        }
+    }
+
+    function markAsRead(id, element, orderId) {
+        const csrfToken = getCookie('csrftoken');
+        fetch(`/notify/api/v1/mark-read/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status) {
+                element.classList.remove('unread');
+                fetchNotifications(); // Refresh badge count
+                if (orderId) {
+                    window.location.href = `/admin/order/order/${orderId}/change/`;
+                }
+            }
+        })
+        .catch(err => console.error("Error marking notification read:", err));
+    }
+
+    markAllReadBtn.addEventListener('click', () => {
+        const csrfToken = getCookie('csrftoken');
+        fetch('/notify/api/v1/mark-read/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status) {
+                fetchNotifications();
+            }
+        })
+        .catch(err => console.error("Error marking all read:", err));
+    });
+
+    // Helper to get csrf token cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // FCM Integration
+    function sendTokenToServer(token) {
+        const csrfToken = getCookie('csrftoken');
+        fetch('/notify/api/v1/register-device/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ token: token })
+        })
+        .then(res => res.json())
+        .then(data => console.log("FCM Device registered successfully"))
+        .catch(err => console.error("Error registering FCM device:", err));
+    }
+
+    // Initialize FCM
+    if (firebaseConfig.apiKey) {
+        try {
+            firebase.initializeApp(firebaseConfig);
+            const messaging = firebase.messaging();
+
+            // Register Service Worker
+            navigator.serviceWorker.register('/firebase-messaging-sw.js')
+            .then((registration) => {
+                messaging.useServiceWorker(registration);
+                
+                // Request Permission and Get Token
+                Notification.requestPermission().then((permission) => {
+                    if (permission === 'granted') {
+                        messaging.getToken({ vapidKey: vapidKey }).then((currentToken) => {
+                            if (currentToken) {
+                                sendTokenToServer(currentToken);
+                            }
+                        }).catch(err => console.warn("Error getting FCM token:", err));
+                    }
+                });
+
+                // Foreground message handler
+                messaging.onMessage((payload) => {
+                    console.log('Foreground message received:', payload);
+                    showNotificationToast(payload.notification.title, payload.notification.body);
+                    fetchNotifications();
+                });
+            });
+        } catch (err) {
+            console.warn("FCM registration or initialization failed:", err);
+        }
+    } else {
+        console.warn("FCM Configuration is missing. Set FIREBASE_API_KEY env variable.");
+    }
+
+    // Show custom toast notification
+    function showNotificationToast(title, body, orderId) {
+        const toast = document.createElement('div');
+        toast.className = 'vd-card';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '24px';
+        toast.style.right = '24px';
+        toast.style.zIndex = '9999';
+        toast.style.display = 'flex';
+        toast.style.alignItems = 'center';
+        toast.style.gap = '12px';
+        toast.style.padding = '16px';
+        toast.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1)';
+        toast.style.borderLeft = '4px solid #f97316';
+        toast.style.borderRadius = '8px';
+        toast.style.background = '#fff';
+        toast.style.transform = 'translateY(100px)';
+        toast.style.opacity = '0';
+        toast.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+
+        if (orderId) {
+            toast.style.cursor = 'pointer';
+            toast.addEventListener('click', () => {
+                window.location.href = `/admin/order/order/${orderId}/change/`;
+            });
+        }
+
+        // Adjust for dark mode if active
+        if (document.documentElement.classList.contains('dark')) {
+            toast.style.background = '#1f2937';
+            toast.style.borderColor = '#374151';
+        }
+
+        toast.innerHTML = `
+            <span class="material-symbols-outlined" style="color: #f97316; font-size: 24px;">notifications_active</span>
+            <div>
+                <p style="font-size: 13px; font-weight: 700; margin: 0; color: #111827;" class="dark:text-white">${title}</p>
+                <p style="font-size: 11px; margin: 4px 0 0 0; color: #4b5563;" class="dark:text-gray-300">${body}</p>
+            </div>
+        `;
+
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.transform = 'translateY(0)';
+            toast.style.opacity = '1';
+        }, 100);
+
+        // Web Audio synthesized chime (100% offline, cross-browser, zero network dependency)
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // First note (D5)
+            const osc1 = audioCtx.createOscillator();
+            const gain1 = audioCtx.createGain();
+            osc1.connect(gain1);
+            gain1.connect(audioCtx.destination);
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
+            gain1.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+            osc1.start(audioCtx.currentTime);
+            osc1.stop(audioCtx.currentTime + 0.4);
+
+            // Second note (A5)
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(880.00, audioCtx.currentTime + 0.12);
+            gain2.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain2.gain.setValueAtTime(0.1, audioCtx.currentTime + 0.12);
+            gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12 + 0.6);
+            osc2.start(audioCtx.currentTime + 0.12);
+            osc2.stop(audioCtx.currentTime + 0.12 + 0.6);
+        } catch(e) {
+            console.log("Audio notification sound blocked or not supported:", e);
+        }
+
+        setTimeout(() => {
+            toast.style.transform = 'translateY(100px)';
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+
+    // Initial load of notifications dropdown
+    fetchNotifications();
+
+    function pollDashboardLiveStats() {
+        fetch('/notify/api/v1/dashboard-api/')
+        .then(res => res.json())
+        .then(data => {
+            // 1. Update KPI stats
+            if (data.custom_stats) {
+                data.custom_stats.forEach(stat => {
+                    const slug = stat.title.toLowerCase().replace(/ /g, '-');
+                    const valEl = document.getElementById(`stat-val-${slug}`);
+                    const chgEl = document.getElementById(`stat-change-${slug}`);
+                    if (valEl) valEl.textContent = stat.value;
+                    if (chgEl) {
+                        chgEl.textContent = stat.change;
+                        chgEl.className = `vd-sub ${stat.color}`;
+                    }
+                });
+            }
+
+            // 2. Update Recent Orders
+            const ordersList = document.getElementById('live-recent-orders-list');
+            if (ordersList && data.upcoming_orders) {
+                ordersList.innerHTML = data.upcoming_orders.map(order => {
+                    let badgeClass = 'vd-badge-red';
+                    let statusLabel = order.status;
+                    if (order.status === 'NEW') {
+                        badgeClass = 'vd-badge-yellow';
+                        statusLabel = 'New';
+                    } else if (order.status === 'ACCEPTED') {
+                        badgeClass = 'vd-badge-green';
+                        statusLabel = 'Accepted';
+                    } else if (order.status === 'PREPARING') {
+                        badgeClass = 'vd-badge-yellow';
+                        statusLabel = 'Preparing';
+                    } else if (order.status === 'READY' || order.status === 'PICKED_UP' || order.status === 'COMPLETED') {
+                        badgeClass = 'vd-badge-green';
+                        statusLabel = order.status.replace('_', ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+                    } else if (order.status === 'pending') {
+                        badgeClass = 'vd-badge-yellow';
+                        statusLabel = 'Pending';
+                    }
+
+                    const date = new Date(order.created_at);
+                    const formattedDate = date.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                    return `
+                        <a href="/admin/order/order/${order.id}/change/" style="text-decoration:none; display:block;">
+                            <div class="vd-order-item">
+                                <div style="overflow: hidden;">
+                                    <p class="vd-order-name">${order.first_name} ${order.last_name}</p>
+                                    <p class="vd-sub" style="margin-top: 2px;">${order.order_id} &bull; ${order.city} &bull; ${formattedDate}</p>
+                                </div>
+                                <span class="vd-badge ${badgeClass}">${statusLabel}</span>
+                            </div>
+                        </a>
+                    `;
+                }).join('');
+            }
+
+            // 3. Update Recent Activity
+            const activityList = document.getElementById('live-recent-activity-list');
+            if (activityList && data.recent_activity) {
+                activityList.innerHTML = data.recent_activity.map(act => {
+                    const avatarContent = act.image_url 
+                        ? `<img src="${act.image_url}" alt="${act.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
+                        : act.name.slice(0, 2).toUpperCase();
+
+                    return `
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="vd-avatar ${act.color}">
+                                    ${avatarContent}
+                                </div>
+                                <div>
+                                    <p class="vd-activity-name"><a href="${act.link}" class="vd-clickable-name">${act.name}</a></p>
+                                    <p class="vd-sub">${act.action}</p>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span class="vd-badge ${act.badge_class}">${act.status}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 4. Update Recent Invoices
+            const invoicesTbody = document.getElementById('live-recent-invoices-tbody');
+            if (invoicesTbody && data.recent_payments) {
+                invoicesTbody.innerHTML = data.recent_payments.map(pmt => {
+                    const truncatedTx = pmt.id.toString().slice(0, 12);
+                    return `
+                        <tr>
+                            <td style="padding-right: 16px;">
+                                <span style="font-family: monospace; font-size: .72rem; font-weight: 700; color: #f59e0b;">
+                                    ${truncatedTx}
+                                </span>
+                            </td>
+                            <td style="font-weight: 600; padding-right: 16px;">
+                                ${pmt.user_email}
+                            </td>
+                            <td style="text-align:right; font-weight: 700; padding-right: 16px;">
+                                $${pmt.amount.toFixed(2)}
+                            </td>
+                            <td style="padding-right: 16px;">
+                                <span class="vd-badge vd-badge-green">Paid</span>
+                            </td>
+                            <td style="text-align:right;">
+                                <a href="${pmt.stripe_link}" target="_blank" style="font-size:10px; font-weight: 700; color: #6366f1; text-decoration: none;">Stripe ↗</a>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        })
+        .catch(err => console.error("Error polling dashboard live stats:", err));
+    }
+
+    // Poll every 8 seconds for live dashboard statistics updates
+    setInterval(pollDashboardLiveStats, 8000);
 </script>
 
 {% endblock %}

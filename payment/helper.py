@@ -184,7 +184,7 @@ def Create_payment_intent(data, request, order):
             payment.save()
 
             # Update order status
-            order.status = 'paid'
+            order.status = 'NEW'
             order.save()
             
             return {

@@ -15,15 +15,19 @@ class OrderAdmin(ModelAdmin):
     ordering = ('-created_at',)
     inlines = [OrderItemInline]
     
-    actions = ['mark_as_paid', 'mark_as_delivered']
+    actions = ['mark_as_accepted', 'mark_as_completed']
 
-    def mark_as_paid(self, request, queryset):
-        queryset.update(status='paid')
-    mark_as_paid.short_description = "Mark selected orders as Paid"
+    def mark_as_accepted(self, request, queryset):
+        for order in queryset:
+            order.status = 'ACCEPTED'
+            order.save()
+    mark_as_accepted.short_description = "Mark selected orders as Accepted"
 
-    def mark_as_delivered(self, request, queryset):
-        queryset.update(status='delivered')
-    mark_as_delivered.short_description = "Mark selected orders as Delivered"
+    def mark_as_completed(self, request, queryset):
+        for order in queryset:
+            order.status = 'COMPLETED'
+            order.save()
+    mark_as_completed.short_description = "Mark selected orders as Completed"
 
 @admin.register(Coupon)
 class CouponAdmin(ModelAdmin):
