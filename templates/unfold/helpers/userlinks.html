@@ -1,0 +1,420 @@
+{% load i18n static unfold %}
+
+<div class="flex flex-row gap-4 items-center ml-auto">
+    {% if environment %}
+        {% include "unfold/helpers/label.html" with text=environment.0 type=environment.1 %}
+    {% endif %}
+
+    <!-- Global Notification Bell -->
+    <div style="position: relative; z-index: 50; display: flex; align-items: center;" id="admin-notifications-widget">
+        <button id="noti-bell-btn" style="padding: 6px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid #e5e7eb; cursor: pointer; background: #fff;" class="dark:bg-base-800 dark:border-base-700">
+            <span class="material-symbols-outlined" style="font-size: 20px; color: #4b5563;" class="dark:text-font-default-dark">notifications</span>
+            <span id="noti-badge" style="position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; font-size: 9px; font-weight: 700; width: 15px; height: 15px; border-radius: 50%; display: none; align-items: center; justify-content: center; border: 1px solid #fff;">0</span>
+        </button>
+        
+        <!-- Dropdown Menu -->
+        <div id="noti-dropdown" style="display: none; position: absolute; right: 0; top: 40px; width: 320px; max-height: 480px; z-index: 100; padding: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); flex-direction: column; gap: 8px; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff;" class="dark:bg-base-800 dark:border-base-700">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f3f4f6; padding-bottom: 6px; margin-bottom: 2px;" class="dark:border-base-700">
+                <p style="font-size: 13px; font-weight: 700; margin: 0; color: #111827;" class="dark:text-font-default-dark">Notifications</p>
+                <button id="mark-all-read-btn" style="font-size: 10px; font-weight: 600; color: #f97316; background: none; border: none; cursor: pointer;">Mark all as read</button>
+            </div>
+            <div id="noti-list" style="display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: 320px;">
+                <!-- Notifications will be rendered here dynamically -->
+            </div>
+            <div style="border-top: 1px solid #f3f4f6; padding-top: 6px; margin-top: 2px; display: flex; justify-content: center;" class="dark:border-base-700">
+                <a href="/admin/notify/notification/" style="font-size: 10px; font-weight: 600; color: #f97316; text-decoration: none; display: flex; align-items: center; gap: 4px; padding: 4px 10px; border: 1px solid #f97316; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='#f97316'; this.style.color='#fff';" onmouseout="this.style.background='none'; this.style.color='#f97316';">
+                    <span class="material-symbols-outlined" style="font-size: 12px;">database</span>
+                    Manage Notifications
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% action_list %}
+
+    {% if nav_global_side %}
+        {{ nav_global_side }}
+    {% endif %}
+</div>
+
+<!-- Style & Script logic for notifications -->
+<style>
+    /* Styling for notification items */
+    .noti-item {
+        padding: 10px;
+        border-radius: 6px;
+        background: #f9fafb;
+        border: 1px solid #f3f4f6;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .dark .noti-item {
+        background: #1f2937;
+        border-color: #374151;
+    }
+    .noti-item:hover {
+        background: #f3f4f6;
+    }
+    .dark .noti-item:hover {
+        background: #374151;
+    }
+    .noti-item.unread {
+        background: #fff7ed;
+        border-color: #ffedd5;
+    }
+    .dark .noti-item.unread {
+        background: #451a03;
+        border-color: #78350f;
+    }
+    .noti-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 2px 0;
+    }
+    .dark .noti-title {
+        color: #f9fafb;
+    }
+    .noti-message {
+        font-size: 10px;
+        color: #4b5563;
+        margin: 0 0 4px 0;
+        line-height: 1.3;
+    }
+    .dark .noti-message {
+        color: #d1d5db;
+    }
+    .noti-time {
+        font-size: 9px;
+        color: #9ca3af;
+        margin: 0;
+    }
+
+    /* Notification popup toast */
+    #notification-toast-container {
+        position: fixed;
+        top: 80px;
+        right: 24px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        pointer-events: none;
+    }
+</style>
+
+<div id="notification-toast-container"></div>
+
+<script>
+    (function() {
+        // Run code once the DOM is loaded
+        function initNotificationWidget() {
+            const bellBtn = document.getElementById('noti-bell-btn');
+            const notiDropdown = document.getElementById('noti-dropdown');
+            const markAllBtn = document.getElementById('mark-all-read-btn');
+            const notiList = document.getElementById('noti-list');
+            const notiBadge = document.getElementById('noti-badge');
+            
+            if (!bellBtn) return;
+
+            // Toggle dropdown
+            bellBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = notiDropdown.style.display === 'none';
+                notiDropdown.style.display = isHidden ? 'flex' : 'none';
+                if (isHidden) {
+                    fetchNotifications();
+                }
+            });
+
+            document.addEventListener('click', () => {
+                if (notiDropdown) notiDropdown.style.display = 'none';
+            });
+
+            notiDropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+
+            // Mark all as read
+            markAllBtn.addEventListener('click', () => {
+                const csrfToken = getCookie('csrftoken');
+                fetch('/notify/api/v1/mark-read/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status) {
+                        fetchNotifications();
+                    }
+                })
+                .catch(err => console.error("Error marking all read:", err));
+            });
+
+            // Fetch and render notifications
+            let knownNotifications = new Set();
+            let isFirstLoad = true;
+
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            window.markAsRead = function(id, element, orderId) {
+                const csrfToken = getCookie('csrftoken');
+                fetch(`/notify/api/v1/mark-read/${id}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status) {
+                        element.classList.remove('unread');
+                        fetchNotifications();
+                        if (orderId) {
+                            window.location.href = `/admin/order/order/${orderId}/change/`;
+                        }
+                    }
+                })
+                .catch(err => console.error("Error marking single read:", err));
+            };
+
+            function showNotificationToast(noti) {
+                const container = document.getElementById('notification-toast-container');
+                if (!container) return;
+
+                const toast = document.createElement('div');
+                toast.style.background = '#ffffff';
+                toast.style.borderLeft = '4px solid #f97316';
+                toast.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)';
+                toast.style.borderRadius = '8px';
+                toast.style.padding = '14px 18px';
+                toast.style.width = '320px';
+                toast.style.pointerEvents = 'auto';
+                toast.style.cursor = 'pointer';
+                toast.style.transform = 'translateX(100px)';
+                toast.style.opacity = '0';
+                toast.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+                
+                // Dark mode support
+                if (document.documentElement.classList.contains('dark')) {
+                    toast.style.background = '#1f2937';
+                    toast.style.borderLeftColor = '#f97316';
+                }
+
+                const orderIdVal = noti.order_id ? `'${noti.order_id}'` : 'null';
+                toast.setAttribute('onclick', `markAsRead(${noti.id}, this, ${orderIdVal})`);
+
+                toast.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <p style="font-weight: 700; font-size: 12px; margin: 0; color: #111827;" class="dark:text-font-default-dark">${noti.title}</p>
+                        <p style="font-size: 11px; margin: 0; color: #4b5563; line-height: 1.3;" class="dark:text-font-default-dark">${noti.message}</p>
+                    </div>
+                `;
+
+                container.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(0)';
+                    toast.style.opacity = '1';
+                }, 100);
+
+                // Web Audio chime
+                try {
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc1 = audioCtx.createOscillator();
+                    const gain1 = audioCtx.createGain();
+                    osc1.connect(gain1);
+                    gain1.connect(audioCtx.destination);
+                    osc1.type = 'sine';
+                    osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
+                    gain1.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                    osc1.start(audioCtx.currentTime);
+                    osc1.stop(audioCtx.currentTime + 0.4);
+
+                    const osc2 = audioCtx.createOscillator();
+                    const gain2 = audioCtx.createGain();
+                    osc2.connect(gain2);
+                    gain2.connect(audioCtx.destination);
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(880.00, audioCtx.currentTime + 0.12);
+                    gain2.gain.setValueAtTime(0, audioCtx.currentTime);
+                    gain2.gain.setValueAtTime(0.1, audioCtx.currentTime + 0.12);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12 + 0.6);
+                    osc2.start(audioCtx.currentTime + 0.12);
+                    osc2.stop(audioCtx.currentTime + 0.12 + 0.6);
+                } catch(e) {
+                    console.log("Audio notification sound blocked or not supported:", e);
+                }
+
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(100px)';
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, 5000);
+            }
+
+            function fetchNotifications() {
+                fetch('/notify/api/v1/list/')
+                .then(res => res.json())
+                .then(data => {
+                    const notifications = data.results || data;
+                    if (!Array.isArray(notifications)) return;
+
+                    renderNotifications(notifications);
+
+                    let hasNew = false;
+                    notifications.forEach(noti => {
+                        if (!knownNotifications.has(noti.id)) {
+                            knownNotifications.add(noti.id);
+                            if (!isFirstLoad && !noti.is_read) {
+                                showNotificationToast(noti);
+                                hasNew = true;
+                            }
+                        }
+                    });
+
+                    isFirstLoad = false;
+                })
+                .catch(err => console.error("Error fetching notifications:", err));
+            }
+
+            function renderNotifications(notifications) {
+                if (notifications.length === 0) {
+                    notiList.innerHTML = `<div style="text-align: center; color: #9ca3af; padding: 16px; font-size: 11px;">No notifications yet.</div>`;
+                    notiBadge.style.display = 'none';
+                    return;
+                }
+
+                let unreadCount = 0;
+                notiList.innerHTML = notifications.map(noti => {
+                    if (!noti.is_read) unreadCount++;
+                    const date = new Date(noti.created_at);
+                    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' &bull; ' + date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                    
+                    const orderIdStr = noti.order_id ? `'${noti.order_id}'` : 'null';
+                    return `
+                        <div class="noti-item ${noti.is_read ? '' : 'unread'}" onclick="markAsRead(${noti.id}, this, ${orderIdStr})">
+                            <p class="noti-title">${noti.title}</p>
+                            <p class="noti-message">${noti.message}</p>
+                            <p class="noti-time">${timeStr}</p>
+                        </div>
+                    `;
+                }).join('');
+
+                if (unreadCount > 0) {
+                    notiBadge.textContent = unreadCount;
+                    notiBadge.style.display = 'flex';
+                } else {
+                    notiBadge.style.display = 'none';
+                }
+            }
+
+            // Initial load of notifications dropdown
+            fetchNotifications();
+            
+            // Poll every 4 seconds
+            setInterval(fetchNotifications, 4000);
+
+            // Firebase dynamic configuration & registration
+            fetch('/notify/api/v1/firebase-config/')
+            .then(res => res.json())
+            .then(firebaseConfig => {
+                if (firebaseConfig.apiKey) {
+                    loadFirebaseSDK(() => {
+                        try {
+                            firebase.initializeApp(firebaseConfig);
+                            const messaging = firebase.messaging();
+
+                            // Register Service Worker
+                            navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                            .then((registration) => {
+                                messaging.useServiceWorker(registration);
+                                
+                                // Request Permission and Get Token
+                                Notification.requestPermission().then((permission) => {
+                                    if (permission === 'granted') {
+                                        messaging.getToken({ vapidKey: firebaseConfig.vapidKey }).then((currentToken) => {
+                                            if (currentToken) {
+                                                sendTokenToServer(currentToken);
+                                            }
+                                        }).catch(err => console.warn("Error getting FCM token:", err));
+                                    }
+                                });
+
+                                // Foreground message handler
+                                messaging.onMessage((payload) => {
+                                    console.log('Foreground message received:', payload);
+                                    showNotificationToast({
+                                        id: payload.data ? payload.data.notification_id : null,
+                                        title: payload.notification.title,
+                                        message: payload.notification.body,
+                                        order_id: payload.data ? payload.data.order_id : null
+                                    });
+                                    fetchNotifications();
+                                });
+                            });
+                        } catch (err) {
+                            console.warn("FCM registration or initialization failed:", err);
+                        }
+                    });
+                }
+            })
+            .catch(err => console.error("Error loading firebase config:", err));
+
+            function sendTokenToServer(token) {
+                const csrfToken = getCookie('csrftoken');
+                fetch('/notify/api/v1/register-device/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ token: token })
+                })
+                .then(res => res.json())
+                .then(data => console.log("FCM Device registered successfully"))
+                .catch(err => console.error("Error registering FCM device:", err));
+            }
+
+            function loadFirebaseSDK(callback) {
+                if (window.firebase) {
+                    callback();
+                    return;
+                }
+                const s1 = document.createElement('script');
+                s1.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js';
+                s1.onload = () => {
+                    const s2 = document.createElement('script');
+                    s2.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js';
+                    s2.onload = callback;
+                    document.head.appendChild(s2);
+                };
+                document.head.appendChild(s1);
+            }
+        }
+
+        // Run when DOM is ready
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initNotificationWidget);
+        } else {
+            initNotificationWidget();
+        }
+    })();
+</script>
