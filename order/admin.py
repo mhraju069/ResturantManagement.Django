@@ -5,7 +5,6 @@ from .models import *
 class OrderItemInline(TabularInline):
     model = OrderItem
     extra = 0
-    readonly_fields = ('price', 'quantity')
 
 @admin.register(Order)
 class OrderAdmin(ModelAdmin):
@@ -40,3 +39,4 @@ class ChargesAdmin(ModelAdmin):
     list_filter = ('charge_type', 'active')
 
 admin.site.register(ApplyCoupon,ModelAdmin)
+# admin.site.register(OrderItem,ModelAdmin)

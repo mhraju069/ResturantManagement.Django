@@ -94,3 +94,61 @@ def notify_user_order_status(order):
         "type": "order_status_change"
     }
     send_fcm_notification(order.user, title, message, data)
+
+
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.conf import settings
+
+def send_payment_complete_email(order):
+    """
+    Sends a confirmation email to the customer when their payment is completed.
+    """
+    try:
+        order.refresh_from_db()
+        subject = f"Order Confirmed - {order.order_id}"
+        context = {'order': order}
+        html_content = render_to_string('emails/order_placed.html', context)
+        text_content = strip_tags(html_content)
+        
+        from_email = getattr(settings, 'EMAIL_HOST_USER', 'noreply@varivo.com')
+        to_email = order.email
+        
+        email = EmailMultiAlternatives(
+            subject,
+            text_content,
+            from_email,
+            [to_email]
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send(fail_silently=False)
+        logger.info(f"Payment confirmation email sent to {to_email} for order {order.order_id}")
+    except Exception as e:
+        logger.error(f"Failed to send payment confirmation email to {order.email} for order {order.order_id}: {e}")
+
+def send_order_ready_email(order):
+    """
+    Sends an email to the customer when their order is marked as READY.
+    """
+    try:
+        order.refresh_from_db()
+        subject = f"Your Order is Ready! - {order.order_id}"
+        context = {'order': order}
+        html_content = render_to_string('emails/order_ready.html', context)
+        text_content = strip_tags(html_content)
+        
+        from_email = getattr(settings, 'EMAIL_HOST_USER', 'noreply@varivo.com')
+        to_email = order.email
+        
+        email = EmailMultiAlternatives(
+            subject,
+            text_content,
+            from_email,
+            [to_email]
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send(fail_silently=False)
+        logger.info(f"Order ready email sent to {to_email} for order {order.order_id}")
+    except Exception as e:
+        logger.error(f"Failed to send order ready email to {order.email} for order {order.order_id}: {e}")
