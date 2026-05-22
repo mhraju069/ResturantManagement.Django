@@ -60,3 +60,19 @@ class DashboardDataAPIView(APIView):
             return Response(data)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class FirebaseConfigAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        return Response({
+            "apiKey": getattr(settings, "FIREBASE_API_KEY", ""),
+            "authDomain": getattr(settings, "FIREBASE_AUTH_DOMAIN", ""),
+            "projectId": getattr(settings, "FIREBASE_PROJECT_ID", ""),
+            "storageBucket": getattr(settings, "FIREBASE_STORAGE_BUCKET", ""),
+            "messagingSenderId": getattr(settings, "FIREBASE_MESSAGING_SENDER_ID", ""),
+            "appId": getattr(settings, "FIREBASE_APP_ID", ""),
+            "measurementId": getattr(settings, "FIREBASE_MEASUREMENT_ID", ""),
+            "vapidKey": getattr(settings, "FIREBASE_VAPID_KEY", ""),
+        })
