@@ -10,15 +10,18 @@ from product.models import FoodItem
 
 class Order(models.Model):
     STATUS_CHOICES = [
-        ('pending', 'Pending'),
+        ('PENDING', 'Pending'),
         ('NEW', 'New'),
         ('ACCEPTED', 'Accepted'),
-        ('PREPARING', 'Preparing'),
+        ('PREPARING-5', 'Preparing - 5mins'),
+        ('PREPARING-10', 'Preparing - 10mins'),
+        ('PREPARING-15', 'Preparing - 15mins'),
+        ('PREPARING-20', 'Preparing - 20mins'),
+        ('PREPARING-30', 'Preparing - 30mins'),
         ('READY', 'Ready'),
         ('PICKED_UP', 'Picked Up'),
         ('COMPLETED', 'Completed'),
-        ('failed', 'Failed'),
-        ('cancelled', 'Cancelled'),
+        ('FAILED', 'Failed'),
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order_id = models.CharField(max_length=50, verbose_name="Order ID", blank=True, null=True, unique=True)
