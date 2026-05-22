@@ -1,5 +1,6 @@
 from django.db.models import Sum, Count, F, Q
 from django.core.paginator import Paginator
+from django.conf import settings
 from authentication.models import User
 from order.models import Order, OrderItem
 from product.models import FoodItem, FoodImage
@@ -250,8 +251,8 @@ def dashboard_callback(request, context):
     users_change = get_percent_change(users_24h, users_prev_24h)
 
     # 4. New Orders (Paid in last 24H vs Prev 24H)
-    new_orders_24h = Order.objects.filter(status='paid', created_at__gte=now - timedelta(hours=24)).count()
-    new_orders_prev_24h = Order.objects.filter(status='paid', created_at__gte=now - timedelta(hours=48), created_at__lt=now - timedelta(hours=24)).count()
+    new_orders_24h = Order.objects.filter(status='NEW', created_at__gte=now - timedelta(hours=24)).count()
+    new_orders_prev_24h = Order.objects.filter(status='NEW', created_at__gte=now - timedelta(hours=48), created_at__lt=now - timedelta(hours=24)).count()
     new_orders_change = get_percent_change(new_orders_24h, new_orders_prev_24h)
 
     # ── Chart data ────────────────────────────────────────
@@ -308,6 +309,16 @@ def dashboard_callback(request, context):
         "upcoming_orders": upcoming_orders,
         "recent_activity": recent_activity,
         "recent_payments": recent_payments,
+        "firebase_config": {
+            "apiKey": getattr(settings, "FIREBASE_API_KEY", ""),
+            "authDomain": getattr(settings, "FIREBASE_AUTH_DOMAIN", ""),
+            "projectId": getattr(settings, "FIREBASE_PROJECT_ID", ""),
+            "storageBucket": getattr(settings, "FIREBASE_STORAGE_BUCKET", ""),
+            "messagingSenderId": getattr(settings, "FIREBASE_MESSAGING_SENDER_ID", ""),
+            "appId": getattr(settings, "FIREBASE_APP_ID", ""),
+            "measurementId": getattr(settings, "FIREBASE_MEASUREMENT_ID", ""),
+            "vapidKey": getattr(settings, "FIREBASE_VAPID_KEY", ""),
+        },
     })
     return context
 
@@ -337,3 +348,120 @@ def admin_activity_log(request):
     })
     
     return render(request, "admin/activity_log.html", context)
+
+
+def get_dashboard_live_data():
+    now = timezone.now()
+    
+    # 1. Total Orders (Last 30 Days vs Prev 30)
+    last_30_days_start = now - timedelta(days=30)
+    prev_30_days_start = now - timedelta(days=60)
+    orders_last_30 = Order.objects.filter(created_at__gte=last_30_days_start).count()
+    orders_prev_30 = Order.objects.filter(created_at__gte=prev_30_days_start, created_at__lt=last_30_days_start).count()
+    
+    def get_percent_change(current, previous):
+        if previous == 0:
+            return 100 if current > 0 else 0
+        return ((current - previous) / previous) * 100
+
+    def format_change(change, period_text):
+        prefix = "+" if change >= 0 else ""
+        return f"{prefix}{change:.1f}% vs {period_text}"
+        
+    orders_change = get_percent_change(orders_last_30, orders_prev_30)
+
+    # 2. Total Revenue (This Month vs Last Month)
+    this_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    last_month_start = (this_month_start - timedelta(days=1)).replace(day=1)
+    rev_this_month = Payments.objects.filter(status='paid', created_at__gte=this_month_start).aggregate(Sum('amount'))['amount__sum'] or 0
+    rev_last_month = Payments.objects.filter(status='paid', created_at__gte=last_month_start, created_at__lt=this_month_start).aggregate(Sum('amount'))['amount__sum'] or 0
+    rev_change = get_percent_change(rev_this_month, rev_last_month)
+
+    # 3. Active Users (Last 24H vs Prev 24H)
+    users_24h = User.objects.filter(last_login__gte=now - timedelta(hours=24)).count()
+    users_prev_24h = User.objects.filter(last_login__gte=now - timedelta(hours=48), last_login__lt=now - timedelta(hours=24)).count()
+    users_change = get_percent_change(users_24h, users_prev_24h)
+
+    # 4. New Orders (Paid in last 24H vs Prev 24H)
+    new_orders_24h = Order.objects.filter(status='NEW', created_at__gte=now - timedelta(hours=24)).count()
+    new_orders_prev_24h = Order.objects.filter(status='NEW', created_at__gte=now - timedelta(hours=48), created_at__lt=now - timedelta(hours=24)).count()
+    new_orders_change = get_percent_change(new_orders_24h, new_orders_prev_24h)
+
+    custom_stats = [
+        {
+            "title": "Total Orders",
+            "value": orders_last_30,
+            "change": format_change(orders_change, "last month"),
+            "color": "vd-trend-up" if orders_change >= 0 else "vd-trend-down"
+        },
+        {
+            "title": "Total Revenue",
+            "value": f"${rev_this_month:,.0f}",
+            "change": format_change(rev_change, "last month"),
+            "color": "vd-trend-up" if rev_change >= 0 else "vd-trend-down"
+        },
+        {
+            "title": "Active Users",
+            "value": users_24h,
+            "change": format_change(users_change, "last 24H"),
+            "color": "vd-trend-up" if users_change >= 0 else "vd-trend-down"
+        },
+        {
+            "title": "New Orders",
+            "value": new_orders_24h,
+            "change": format_change(new_orders_change, "last 24H"),
+            "color": "vd-trend-up" if new_orders_change >= 0 else "vd-trend-down"
+        },
+    ]
+
+    # Upcoming / Recent Orders
+    upcoming_orders_qs = Order.objects.exclude(status='pending').order_by('-created_at')[:8]
+    upcoming_orders = []
+    for o in upcoming_orders_qs:
+        upcoming_orders.append({
+            "id": str(o.id),
+            "order_id": o.order_id or "Order",
+            "first_name": o.first_name,
+            "last_name": o.last_name,
+            "city": o.city or "Delivery",
+            "created_at": o.created_at.isoformat(),
+            "status": o.status
+        })
+
+    # Recent Activity
+    recent_activity_data = get_activity_data(limit=8)
+    recent_activity = []
+    for a in recent_activity_data:
+        recent_activity.append({
+            "type": a["type"],
+            "id": a["id"],
+            "date": a["date"].isoformat(),
+            "name": a["name"],
+            "action": a["action"],
+            "status": a["status"],
+            "badge_class": a["badge_class"],
+            "color": a["color"],
+            "image_url": a["image_url"],
+            "link": a["link"]
+        })
+
+    # Recent Payments (Invoices)
+    recent_payments_qs = Payments.objects.filter(status='paid', order__isnull=False).select_related('order', 'user').order_by('-created_at')[:5]
+    recent_payments = []
+    for p in recent_payments_qs:
+        recent_payments.append({
+            "id": p.id,
+            "order_id": str(p.order.id) if p.order else "",
+            "order_label": p.order.order_id if (p.order and p.order.order_id) else "",
+            "user_email": p.user.email if p.user else "",
+            "amount": float(p.amount),
+            "created_at": p.created_at.isoformat(),
+            "stripe_link": f"https://dashboard.stripe.com/payments/{p.payment_intent_id}" if p.payment_intent_id else "#"
+        })
+
+    return {
+        "custom_stats": custom_stats,
+        "upcoming_orders": upcoming_orders,
+        "recent_activity": recent_activity,
+        "recent_payments": recent_payments
+    }
