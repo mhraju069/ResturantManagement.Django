@@ -8,13 +8,14 @@ from order.serializers import OrderSerializer
 from order.models import Coupon, Charges, ApplyCoupon
 from .models import *
 from product.models import ProductCart, CartItems
+from django.utils.translation import gettext_lazy as _
 
 
 
 def create_checkout_session(request, payment , price ):
 
     if price is None or payment is None:
-        raise Exception("Required data for Checkout Session is missing")
+        raise Exception(_("Required data for Checkout Session is missing"))
     
     session_data = {
         "payment_method_types": ["card"],
@@ -25,7 +26,7 @@ def create_checkout_session(request, payment , price ):
                     "currency": "usd",
                     "unit_amount": int(price * 100),
                     "product_data": {
-                        "name": "Confirm your subscription",
+                        "name": _("Confirm your subscription"),
                     },
                 },
                 "quantity": 1 ,
@@ -66,10 +67,10 @@ def Place_order(data, request):
         cart = ProductCart.objects.get(user=user)
         cart_items = cart.cart_items.all()
     except ProductCart.DoesNotExist:
-        return {"status": False, "message": "Cart not found"}
+        return {"status": False, "message": _("Cart not found")}
 
     if not cart_items.exists():
-        return {"status": False, "message": "Cart is empty"}
+        return {"status": False, "message": _("Cart is empty")}
 
     total_amount = 0
     order_items_data = []
@@ -129,9 +130,9 @@ def final_price(request, total_amount, code=None):
                 price = price - amount
                 print(f"Coupon applied: {coupon.code}, discount: {amount}")
             else:
-                raise exceptions.ValidationError("You have already used this coupon code.")
+                raise exceptions.ValidationError(_("You have already used this coupon code."))
         else:
-            raise exceptions.ValidationError("Invalid or inactive coupon code.")
+            raise exceptions.ValidationError(_("Invalid or inactive coupon code."))
 
     # Apply other charges
     charges = Charges.objects.filter(active=True)

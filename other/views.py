@@ -2,6 +2,7 @@ from rest_framework import viewsets,generics,status
 from .serializers import *
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny,IsAuthenticated
+from django.utils.translation import gettext_lazy as _
 
 
 
@@ -37,13 +38,13 @@ class AddLikeToFeedback(generics.GenericAPIView):
         try:
             feedback = FeedBack.objects.get(id=feedback_id)
         except FeedBack.DoesNotExist:
-            return Response({"message": "Feedback not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": _("Feedback not found")}, status=status.HTTP_404_NOT_FOUND)
         
         if feedback.likes.filter(id=request.user.id).exists():
             feedback.likes.remove(request.user)
-            return Response({"message": "Unlike successfully", "likes" : feedback.likes.count()}, status=status.HTTP_200_OK)
+            return Response({"message": _("Unlike successfully"), "likes" : feedback.likes.count()}, status=status.HTTP_200_OK)
         feedback.likes.add(request.user)
-        return Response({"message": "Like successfully", "likes" : feedback.likes.count()}, status=status.HTTP_200_OK)
+        return Response({"message": _("Like successfully"), "likes" : feedback.likes.count()}, status=status.HTTP_200_OK)
 
 
 

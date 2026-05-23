@@ -3,6 +3,7 @@ from .models import *
 from unfold.admin import ModelAdmin, TabularInline
 from django import forms
 from core.widgets import PremiumImageUpload
+from modeltranslation.admin import TranslationAdmin  
 
 
 # Register your models here.
@@ -23,7 +24,7 @@ class FoodImageInline(TabularInline):
     extra = 1
 
 @admin.register(FoodItem)
-class FoodItemAdmin(ModelAdmin):
+class FoodItemAdmin(ModelAdmin,TranslationAdmin):
     list_display = ('name', 'category', 'price', 'is_active')
     search_fields = ('name', 'category')
     list_filter = ('category', 'is_active')

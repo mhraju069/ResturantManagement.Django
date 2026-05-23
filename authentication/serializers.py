@@ -1,6 +1,7 @@
 from .models import User
 from rest_framework import serializers
 from .helper import verify_otp,send_otp
+from django.utils.translation import gettext_lazy as _
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -15,7 +16,7 @@ class SignUpSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs['password'] != attrs['confirm_password']:
-            raise serializers.ValidationError("Password fields do not match.")
+            raise serializers.ValidationError(_("Password fields do not match."))
         return attrs
 
     def create(self, validated_data):
@@ -42,16 +43,16 @@ class SignInSerializer(serializers.Serializer):
             user = User.objects.filter(email=email).first()
             if user:
                 if not user.check_password(password):
-                     raise serializers.ValidationError("Invalid credentials")
+                     raise serializers.ValidationError(_("Invalid credentials"))
                 if not user.is_active:
-                    raise serializers.ValidationError("User is not active")
+                    raise serializers.ValidationError(_("User is not active"))
                 if user.block:
-                    raise serializers.ValidationError("User is blocked")
+                    raise serializers.ValidationError(_("User is blocked"))
                 attrs['user'] = user
                 return attrs
             else:
-                raise serializers.ValidationError("User not found")
-        raise serializers.ValidationError("Email and password are required")
+                raise serializers.ValidationError(_("User not found"))
+        raise serializers.ValidationError(_("Email and password are required"))
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -77,10 +78,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
         if new_password:
             if not old_password:
-                raise serializers.ValidationError({"old_password": "Current password is required to set a new password."})
+                raise serializers.ValidationError({"old_password": _("Current password is required to set a new password.")})
             
             if not instance.check_password(old_password):
-                raise serializers.ValidationError({"old_password": "Old password does not match."})
+                raise serializers.ValidationError({"old_password": _("Old password does not match.")})
             
             instance.set_password(new_password)
 
@@ -123,13 +124,13 @@ class ResetPasswordSerializer(serializers.Serializer):
         confirm_password = attrs.get('confirm_password')
 
         if new_password != confirm_password:
-            raise serializers.ValidationError({"status":False,"message":"Passwords do not match."})
+            raise serializers.ValidationError({"status":False,"message":_("Passwords do not match.")})
         
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise serializers.ValidationError({"status":False,"message":"User not found"})
+            raise serializers.ValidationError({"status":False,"message":_("User not found")})
 
         user.set_password(new_password)
         user.save()
-        return {"status": True, "message": "Password reset successfully"}
+        return {"status": True, "message": _("Password reset successfully")}

@@ -26,3 +26,5 @@ python-dotenv
 PyJWT
 cryptography
 drf-yasg
+django-modeltranslation
+django-rosetta
