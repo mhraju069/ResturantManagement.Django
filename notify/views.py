@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import FCMDevice, Notification
 from .serializers import FCMDeviceSerializer, NotificationSerializer
+from django.utils.translation import gettext_lazy as _
 
 class RegisterDeviceView(generics.CreateAPIView):
     serializer_class = FCMDeviceSerializer
@@ -25,12 +26,12 @@ class MarkNotificationReadView(APIView):
                 notification = Notification.objects.get(pk=pk, user=request.user)
                 notification.is_read = True
                 notification.save()
-                return Response({"status": True, "message": "Notification marked as read"})
+                return Response({"status": True, "message": _("Notification marked as read")})
             except Notification.DoesNotExist:
-                return Response({"status": False, "message": "Notification not found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"status": False, "message": _("Notification not found")}, status=status.HTTP_404_NOT_FOUND)
         else:
             Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
-            return Response({"status": True, "message": "All notifications marked as read"})
+            return Response({"status": True, "message": _("All notifications marked as read")})
 
 from django.shortcuts import render
 from django.conf import settings
@@ -59,7 +60,7 @@ class DashboardDataAPIView(APIView):
             data = get_dashboard_live_data()
             return Response(data)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": str(e), "message": _("Something went wrong")}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class FirebaseConfigAPIView(APIView):

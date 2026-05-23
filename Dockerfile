@@ -8,8 +8,9 @@ ENV PYTHONUNBUFFERED 1
 # Set workdir
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y
+RUN apt-get update && apt-get install -y \
+    gettext \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
 WORKDIR /app

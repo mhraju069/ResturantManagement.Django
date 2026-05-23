@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.utils.translation import gettext_lazy as _
 from rest_framework import generics, status,permissions
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -22,7 +23,7 @@ class SignUpView(generics.CreateAPIView):
         refresh = RefreshToken.for_user(user)
         return Response({
             "status": True,
-            "message": "Registration successful.",
+            "message": _("Registration successful."),
             "data": UserProfileSerializer(user).data,
             "refresh": str(refresh),
             "access": str(refresh.access_token),
@@ -40,7 +41,7 @@ class SignInView(generics.CreateAPIView):
         refresh = RefreshToken.for_user(user)
         return Response({
             "status": True,
-            "message": "Login successful.",
+            "message": _("Login successful."),
             "data": UserProfileSerializer(user).data,
             "refresh": str(refresh),
             "access": str(refresh.access_token),
@@ -79,12 +80,12 @@ class OtpVerifyView(generics.GenericAPIView):
             try:
                 user = User.objects.get(email=request.data.get('email'))
             except User.DoesNotExist:
-                return Response({"status": False,"message": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"status": False,"message": _("User not found.")}, status=status.HTTP_404_NOT_FOUND)
 
             refresh = RefreshToken.for_user(user)
             return Response({
                 "status": True,
-                "message": "OTP verified successfully.",
+                "message": _("OTP verified successfully."),
                 "data": UserProfileSerializer(user).data,
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),

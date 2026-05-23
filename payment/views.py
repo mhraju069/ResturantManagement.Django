@@ -12,6 +12,8 @@ from .serializers import *
 from .helper import *
 from order.serializers import OrderSerializer
 from rest_framework.permissions import IsAuthenticated
+from django.utils.translation import gettext_lazy as _
+
 # Create your views here.
 
 class GetPaymentLinkView(generics.GenericAPIView):
@@ -63,7 +65,7 @@ class PlaceOrderView(generics.GenericAPIView):
         if not serializer.is_valid():
             return Response({
                 "status": False,
-                "message": "Please provide correct information", 
+                "message": _("Please provide correct information"), 
                 "errors": serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
 
@@ -81,7 +83,7 @@ class PlaceOrderView(generics.GenericAPIView):
         
         return Response({
             "status": True,
-            "message": "Payment completed successfully",
+            "message": _("Payment completed successfully"),
             "order": OrderSerializer(order).data,
             "payment_id": create_payment.get("payment_id"),
             "client_secret": create_payment.get("client_secret")
@@ -92,12 +94,12 @@ class PlaceOrderView(generics.GenericAPIView):
 class PaymentSuccessView(APIView):
     permission_classes = []
     def get(self, request):
-        return Response({"message": "Payment successful! Your order is placed."})
+        return Response({"message": _("Payment successful! Your order is placed.")})
 
 class PaymentCancelView(APIView):
     permission_classes = []
     def get(self, request):
-        return Response({"message": "Payment cancelled."})
+        return Response({"message": _("Payment cancelled.")})
 
 from django.shortcuts import render
 class PaymentDemoView(APIView):

@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import *
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 class GetFoodItemApiView(generics.ListAPIView):
@@ -20,7 +21,7 @@ class GetFoodItemApiView(generics.ListAPIView):
         serializer = self.get_serializer(queryset, many=True)
         return Response({
             "success": True,
-            "message": "Food items fetched successfully",
+            "message": _("Food items fetched successfully"),
             "data": serializer.data
         })
 
@@ -41,7 +42,7 @@ class GetcartItemsApiView(generics.ListAPIView):
         
         return Response({
             "success": True,
-            "message": "Cart items fetched successfully",
+            "message": _("Cart items fetched successfully"),
             "data": serializer.data
         })
 
@@ -58,13 +59,13 @@ class UpdateCartApiView(generics.GenericAPIView):
         if action not in ['add', 'remove']:
             return Response({
                 "success": False,
-                "message": "Invalid action",
+                "message": _("Invalid action"),
             }, status=status.HTTP_400_BAD_REQUEST)
 
         if not serializer.is_valid():
             return Response({
                 "success": False,
-                "message": "Invalid data",
+                "message": _("Invalid data"),
                 "errors": serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
 
@@ -77,7 +78,7 @@ class UpdateCartApiView(generics.GenericAPIView):
             if not food_item:
                 return Response({
                     "success": False,
-                    "message": "Food item not found",
+                    "message": _("Food item not found"),
                 }, status=status.HTTP_404_NOT_FOUND)
                 
             cart,_ = ProductCart.objects.get_or_create(user=self.request.user)
@@ -94,14 +95,14 @@ class UpdateCartApiView(generics.GenericAPIView):
 
                     return Response({
                         "success": True,
-                        "message": "Cart item deleted successfully",
+                        "message": _("Cart item deleted successfully"),
                     })
             
             item.save()
                     
             return Response({
                 "success": True,
-                "message": "Cart items added successfully",
+                "message": _("Cart items added successfully"),
             })
 
         except Exception as e:
@@ -125,11 +126,11 @@ class GetMenuApiView(generics.GenericAPIView):
             serializer = self.get_serializer(menu)
             return Response({
                 "success": True,
-                "message": "Menu items fetched successfully",
+                "message": _("Menu items fetched successfully"),
                 "data": serializer.data
             })
         except Menu.DoesNotExist:
             return Response({
                 "success": False,
-                "message": "Menu items not found",
+                "message": _("Menu items not found"),
             }, status=status.HTTP_404_NOT_FOUND)
