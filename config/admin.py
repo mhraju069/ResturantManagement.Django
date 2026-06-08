@@ -99,40 +99,14 @@ def _get_top_foods(days=None):
     return result
 
 
-def dashboard_callback(request, context):
-    """Professional Dashboard Callback for Unfold."""
-    now = timezone.now()
-    thirty_days_ago = now - timedelta(days=30)
 
-    # ── Stats ──────────────────────────────────────────────
-    paid_payments = Payments.objects.filter(status='paid')
-    total_revenue = paid_payments.aggregate(Sum('amount'))['amount__sum'] or 0
-    total_orders  = Order.objects.count()
-    active_users  = User.objects.filter(is_active=True).count()
-    pending_count = Order.objects.filter(status='pending').count()
-
-    # ── Chart data for all three periods ──────────────────
-    chart_7d  = _add_heights(_get_revenue_by_period(paid_payments, 7))
-    chart_1m  = _add_heights(_get_revenue_by_period(paid_payments, 30))
-    chart_1y  = _add_heights(_get_revenue_by_period(paid_payments, 365))
-
-    # ── Recent non-pending orders ──────────────────────────
-    upcoming_orders = (
-        Order.objects.exclude(status='pending')
-        .order_by('-created_at')
-    )
-
-    # ── Recent invoices WITH Stripe link ──────────────────
-    recent_payments = (
-        Payments.objects
-        .filter(status='paid', order__isnull=False)
-        .select_related('order', 'user')
-        .order_by('-created_at')[:5]
-    )
 
 def get_activity_data(limit=None, search_query=None, activity_type=None):
     from django.contrib.admin.models import LogEntry
     activity_items = []
+    
+    # Optimize query load by slicing querysets early based on the limit requested
+    slice_limit = limit if limit else 100
 
     # 1. Recent Signups
     if not activity_type or activity_type == 'signup':
@@ -143,7 +117,7 @@ def get_activity_data(limit=None, search_query=None, activity_type=None):
                 Q(last_name__icontains=search_query) | 
                 Q(email__icontains=search_query)
             )
-        for u in users_qs[:100]:
+        for u in users_qs[:slice_limit]:
             activity_items.append({
                 "type": "signup",
                 "id": str(u.id),
@@ -159,7 +133,7 @@ def get_activity_data(limit=None, search_query=None, activity_type=None):
 
     # 2. Recent Orders
     if not activity_type or activity_type == 'order':
-        orders_qs = Order.objects.order_by('-created_at')
+        orders_qs = Order.objects.select_related('user').order_by('-created_at')
         if search_query:
             orders_qs = orders_qs.filter(
                 Q(order_id__icontains=search_query) | 
@@ -167,12 +141,12 @@ def get_activity_data(limit=None, search_query=None, activity_type=None):
                 Q(last_name__icontains=search_query) |
                 Q(email__icontains=search_query)
             )
-        for o in orders_qs[:100]:
+        for o in orders_qs[:slice_limit]:
             activity_items.append({
                 "type": "order",
                 "id": str(o.id),
                 "date": o.created_at,
-                "name": f"{o.first_name} {o.last_name}".strip() or o.user.email,
+                "name": f"{o.first_name} {o.last_name}".strip() or (o.user.email if o.user else ""),
                 "action": f"Placed order {o.order_id}",
                 "status": o.status.upper(),
                 "badge_class": "vd-badge-yellow" if o.status == 'pending' else "vd-badge-green",
@@ -192,7 +166,7 @@ def get_activity_data(limit=None, search_query=None, activity_type=None):
                 Q(object_repr__icontains=search_query) |
                 Q(change_message__icontains=search_query)
             )
-        for log in logs_qs[:100]:
+        for log in logs_qs[:slice_limit]:
             if log.is_change():
                 action_desc = f"Updated {log.content_type.name}: {log.object_repr}"
             elif log.is_addition():
@@ -262,7 +236,7 @@ def dashboard_callback(request, context):
     chart_1y  = _add_heights(_get_revenue_by_period(paid_payments, 365))
 
     # ── Lists ─────────────────────────────────────────────
-    upcoming_orders = Order.objects.exclude(status='pending').order_by('-created_at')
+    upcoming_orders = Order.objects.exclude(status='pending').order_by('-created_at')[:8]
     recent_payments = Payments.objects.filter(status='paid', order__isnull=False).select_related('order', 'user').order_by('-created_at')[:5]
     recent_activity = get_activity_data(limit=8)
 
@@ -456,7 +430,8 @@ def get_dashboard_live_data():
             "user_email": p.user.email if p.user else "",
             "amount": float(p.amount),
             "created_at": p.created_at.isoformat(),
-            "stripe_link": f"https://dashboard.stripe.com/payments/{p.tnxid}" if p.tnxid else "#"
+            "stripe_link": f"https://dashboard.stripe.com/payments/{p.tnxid}" if p.tnxid else "#",
+            "tnxid": p.tnxid or ""
         })
 
     return {
