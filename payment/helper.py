@@ -130,9 +130,9 @@ def final_price(request, total_amount, code=None):
                 price = price - amount
                 print(f"Coupon applied: {coupon.code}, discount: {amount}")
             else:
-                raise exceptions.ValidationError(_("You have already used this coupon code."))
+                raise exceptions.ValidationError({"error": _("You have already used this coupon code.")})
         else:
-            raise exceptions.ValidationError(_("Invalid or inactive coupon code."))
+            raise exceptions.ValidationError({"error": _("Invalid or inactive coupon code.")})
 
     # Apply other charges
     charges = Charges.objects.filter(active=True)
