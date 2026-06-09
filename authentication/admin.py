@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User
+from .models import User,BusinessProfile
 from unfold.admin import ModelAdmin
 from django import forms
 from core.widgets import PremiumImageUpload
@@ -28,3 +28,30 @@ class UserAdmin(ModelAdmin):
         ("Important dates", {"fields": ("last_login", "created_at")}),
     )
     readonly_fields = ('created_at', 'last_login')
+
+
+@admin.register(BusinessProfile)
+class BusinessProfileAdmin(ModelAdmin):
+    list_display = ('user', 'name', 'contact_number')
+    list_filter = ('user__is_active', 'created_at')
+    search_fields = ('user__email', 'name', 'contact_number')
+    ordering = ('-created_at',)
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                ('user',),
+                ('name', 'contact_number'),
+                ('location', 'country'),
+                ('street', 'city', 'zip_code'),
+                ('logo','tax_id'),
+                ('website', 'contact_email'),
+                ('description',),
+            )
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
+    readonly_fields = ('created_at', 'updated_at')
