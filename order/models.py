@@ -18,6 +18,7 @@ class Order(models.Model):
         ('PREPARING-15', 'Preparing - 15mins'),
         ('PREPARING-20', 'Preparing - 20mins'),
         ('PREPARING-30', 'Preparing - 30mins'),
+        ('PREPARING-45', 'Preparing - 45mins'),
         ('READY', 'Ready'),
         ('PICKED_UP', 'Picked Up'),
         ('COMPLETED', 'Completed'),
@@ -36,6 +37,7 @@ class Order(models.Model):
     state = models.CharField(max_length=50, verbose_name="State")
     zip_code = models.CharField(max_length=6, verbose_name="Zip Code")
     property = models.BooleanField(default=False, help_text="Mark as Property")
+    prep_time = models.IntegerField(blank=True, null=True, verbose_name="Prep Time (minutes)")
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
