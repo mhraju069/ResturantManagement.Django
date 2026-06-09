@@ -81,7 +81,7 @@ class UpdateCartApiView(generics.GenericAPIView):
                     "message": _("Food item not found"),
                 }, status=status.HTTP_404_NOT_FOUND)
                 
-            cart,_ = ProductCart.objects.get_or_create(user=self.request.user)
+            cart, created_cart = ProductCart.objects.get_or_create(user=self.request.user)
             item, created = CartItems.objects.get_or_create(cart=cart,food_item=food_item,defaults={'quantity':quantity})
 
             if action == 'add':
