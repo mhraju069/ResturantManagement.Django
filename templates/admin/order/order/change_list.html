@@ -1,0 +1,935 @@
+{% extends "unfold/layouts/base.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<div class="px-6 py-4 bg-gray-50 border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+    <div class="flex items-center text-sm font-semibold text-gray-500 dark:text-gray-400">
+        <a href="/admin/" class="hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Dashboard</a>
+        <svg class="w-5 h-5 mx-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+        </svg>
+        <span class="text-gray-900 dark:text-gray-100">Order History</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
+
+    /* Restore and protect Unfold's default icon sizes (like sidebar and header bells) from Google Fonts override */
+    .material-symbols-outlined:not(.kitchen-body *) {
+        font-size: 18px !important;
+    }
+
+    /* Custom CSS components matching Django Unfold standard sizes */
+    .kitchen-body {
+        font-family: 'Inter', sans-serif;
+        min-height: 100vh;
+        color: #1e293b;
+        padding: 24px;
+        transition: color 0.3s ease;
+    }
+    
+    .dark .kitchen-body {
+        color: #f9fafb;
+    }
+    
+    /* Layout Containers */
+    .header-panel {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 20px;
+        margin-bottom: 24px;
+    }
+    
+    .dark .header-panel {
+        border-bottom-color: #374151;
+    }
+
+    .brand-section {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .meta-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .tabs-search-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 8px;
+        margin-bottom: 24px;
+        gap: 16px;
+    }
+
+    .dark .tabs-search-container {
+        border-bottom-color: #374151;
+    }
+    
+    /* Tabs */
+    .tab-list {
+        display: flex;
+        gap: 24px;
+    }
+
+    .tab-item {
+        color: #94a3b8;
+        font-weight: 500;
+        font-size: 0.875rem;
+        padding: 8px 4px;
+        position: relative;
+        cursor: pointer;
+        transition: color 0.2s ease, font-weight 0.2s ease;
+        text-decoration: none;
+    }
+    .dark .tab-item {
+        color: #64748b;
+    }
+    
+    .tab-item:hover {
+        color: #f97316;
+    }
+    
+    .tab-item.active {
+        color: #f97316;
+        font-weight: 600;
+    }
+    
+    .tab-item.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: #f97316;
+        border-radius: 2px;
+    }
+
+    /* Active Orders Count Badge */
+    .orders-badge-container {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .orders-badge {
+        background: #f97316;
+        color: #ffffff;
+        border-radius: 9999px;
+        width: 22px;
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 800;
+        box-shadow: 0 2px 6px rgba(249, 115, 22, 0.2);
+    }
+    
+    /* Order Cards Grid */
+    .orders-grid-layout {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        gap: 24px;
+    }
+
+    @media (max-width: 640px) {
+        .orders-grid-layout {
+            grid-template-columns: 1fr;
+        }
+        .header-panel {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .tabs-search-container {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .tab-list {
+            width: 100%;
+            justify-content: space-between;
+            gap: 8px;
+        }
+    }
+    
+    /* Order Card styling (matches Unfold .vd-card styling) */
+    .order-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .dark .order-card {
+        background: #1f2937;
+        border-color: #374151;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
+    }
+    
+    .order-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border-color: #d1d5db;
+    }
+    .dark .order-card:hover {
+        border-color: #4b5563;
+    }
+
+    .card-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-detail-btn {
+        color: #94a3b8;
+        transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 1px solid #e5e7eb;
+        background: transparent;
+    }
+    .dark .card-detail-btn {
+        color: #64748b;
+        border-color: #374151;
+    }
+    .card-detail-btn:hover {
+        color: #f97316;
+        border-color: #f97316;
+        background: #fff7ed;
+    }
+    .dark .card-detail-btn:hover {
+        background: rgba(249, 115, 22, 0.05);
+    }
+    
+    /* Status Badge styling */
+    .status-badge {
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 9999px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    
+    .badge-new {
+        background: #fff3eb;
+        color: #f97316;
+    }
+    .dark .badge-new {
+        background: rgba(249, 115, 22, 0.12);
+        color: #fb923c;
+    }
+    
+    .badge-preparing {
+        background: #fffbeb;
+        color: #d97706;
+    }
+    .dark .badge-preparing {
+        background: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+    }
+    
+    .badge-ready {
+        background: #ecfdf5;
+        color: #10b981;
+    }
+    .dark .badge-ready {
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+    }
+    
+    .badge-completed {
+        background: #f1f5f9;
+        color: #475569;
+    }
+    .dark .badge-completed {
+        background: #374151;
+        color: #cbd5e1;
+    }
+
+    .badge-failed {
+        background: #fef2f2;
+        color: #ef4444;
+    }
+    .dark .badge-failed {
+        background: rgba(239, 68, 68, 0.12);
+        color: #f87171;
+    }
+    
+    /* Customer Row */
+    .customer-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid #f3f4f6;
+        padding-bottom: 12px;
+    }
+    .dark .customer-row {
+        border-bottom-color: #374151;
+    }
+
+    /* Initials Avatar */
+    .initials-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: #fff3eb;
+        color: #f97316;
+        font-weight: 700;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .dark .initials-avatar {
+        background: rgba(249, 115, 22, 0.15);
+        color: #fb923c;
+    }
+
+    /* Food items list */
+    .items-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 2px 0;
+    }
+
+    .item-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.825rem;
+    }
+    
+    /* Prep Time Row */
+    .prep-time-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid #f3f4f6;
+        padding-top: 12px;
+        margin-top: 4px;
+    }
+    .dark .prep-time-row {
+        border-top-color: #374151;
+    }
+
+    /* Prep Time buttons */
+    .prep-btn {
+        border: 1px solid #e2e8f0;
+        background: transparent;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .dark .prep-btn {
+        border-color: #374151;
+        color: #cbd5e1;
+    }
+    
+    .prep-btn:hover {
+        border-color: #f97316;
+        color: #f97316;
+    }
+    
+    .prep-btn.active {
+        background: #f97316;
+        border-color: #f97316;
+        color: #ffffff;
+    }
+    
+    /* Action buttons (matches Unfold input/button styling) */
+    .action-btn-outline {
+        border: 1px solid #f97316;
+        background: transparent;
+        color: #f97316;
+        font-weight: 600;
+        font-size: 0.8rem;
+        padding: 8px 14px;
+        border-radius: 8px;
+        width: 100%;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.2s ease;
+    }
+    .action-btn-outline:hover {
+        background: #fff3eb;
+    }
+    .dark .action-btn-outline:hover {
+        background: rgba(249, 115, 22, 0.1);
+    }
+    
+    .action-btn-outline.reject-btn {
+        border-color: #ef4444;
+        color: #ef4444;
+    }
+    .action-btn-outline.reject-btn:hover {
+        background: #fef2f2;
+    }
+    .dark .action-btn-outline.reject-btn:hover {
+        background: rgba(239, 68, 68, 0.1);
+    }
+
+    .action-btn-solid {
+        background: #f97316;
+        border: 1px solid #f97316;
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 0.8rem;
+        padding: 8px 14px;
+        border-radius: 8px;
+        width: 100%;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.2s ease;
+    }
+    .action-btn-solid:hover {
+        background: #ea580c;
+        border-color: #ea580c;
+    }
+    
+    .action-btn-solid.refund-btn {
+        background: #6366f1;
+        border-color: #6366f1;
+    }
+    .action-btn-solid.refund-btn:hover {
+        background: #4f46e5;
+        border-color: #4f46e5;
+    }
+
+    /* Banners */
+    .ready-banner {
+        background: #ecfdf5;
+        color: #065f46;
+        font-weight: 600;
+        font-size: 0.775rem;
+        padding: 8px 12px;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 8px;
+    }
+    .dark .ready-banner {
+        background: rgba(16, 185, 129, 0.1);
+        color: #34d399;
+    }
+
+    .refund-banner {
+        background: #fff5f5;
+        color: #c53030;
+        font-weight: 600;
+        font-size: 0.775rem;
+        padding: 8px 12px;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 8px;
+    }
+    .dark .refund-banner {
+        background: rgba(239, 68, 68, 0.12);
+        color: #f87171;
+    }
+    
+    /* Live Sync Dot */
+    .sync-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10b981;
+        display: inline-block;
+        animation: pulse-sync 1.8s infinite;
+    }
+    
+    @keyframes pulse-sync {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(1.15); }
+    }
+
+    /* Search Box */
+    .search-container {
+        position: relative;
+        width: 260px;
+    }
+    .search-input {
+        width: 100%;
+        padding: 7px 12px 7px 32px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        font-size: 0.8rem;
+        outline: none;
+        transition: all 0.2s;
+        background: #ffffff;
+    }
+    .dark .search-input {
+        background: #1f2937;
+        border-color: #374151;
+        color: #f9fafb;
+    }
+    .search-input:focus {
+        border-color: #f97316;
+        box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.15);
+    }
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 16px;
+    }
+
+    .flex-center {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+</style>
+
+<div class="kitchen-body">
+    <!-- Top Header Panel -->
+    <div class="header-panel">
+        <!-- Logo / Branding -->
+        <div class="brand-section">
+            <span class="material-symbols-outlined" style="font-size: 24px; color: #f97316;">restaurant</span>
+            <div>
+                <div class="font-extrabold text-lg tracking-tight dark:text-white flex items-center gap-1.5" style="line-height: 1.2;">
+                    Varivo
+                </div>
+                <div class="text-[0.65rem] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-[-1px]">
+                    Kitchen
+                </div>
+            </div>
+        </div>
+        
+        <!-- Live Clock & Status -->
+        <div class="meta-section">
+            <div id="live-clock" class="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                00:00 AM
+            </div>
+            
+            <div class="orders-badge-container">
+                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Active orders</span>
+                <span id="active-orders-count-badge" class="orders-badge">
+                    0
+                </span>
+            </div>
+            
+            <div class="flex-center opacity-85">
+                <span class="sync-dot"></span>
+                <span class="text-[0.65rem] font-bold text-gray-400 uppercase tracking-wider">Live</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs & Search -->
+    <div class="tabs-search-container">
+        <!-- Tabs -->
+        <div class="tab-list">
+            <a onclick="selectTab('all')" id="tab-all" class="tab-item active">All orders</a>
+            <a onclick="selectTab('active')" id="tab-active" class="tab-item">Active orders</a>
+            <a onclick="selectTab('ready')" id="tab-ready" class="tab-item">Ready for pickup</a>
+            <a onclick="selectTab('completed')" id="tab-completed" class="tab-item">Completed</a>
+        </div>
+
+        <!-- Search Box -->
+        <div class="search-container">
+            <span class="material-symbols-outlined search-icon">search</span>
+            <input type="text" id="search-query" oninput="handleSearch(this.value)" placeholder="Search customer, ID..." class="search-input">
+        </div>
+    </div>
+
+    <!-- Main Title (matches Unfold .vd-title sizing exactly) -->
+    <h2 id="tab-title" class="font-extrabold text-gray-900 dark:text-white mb-6" style="font-size: 1.5rem; letter-spacing: -0.02em;">
+        All Orders
+    </h2>
+
+    <!-- Loading State -->
+    <div id="loading-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 64px 0; gap: 12px;">
+        <div style="width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top: 3px solid #f97316; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400">Fetching order history...</p>
+    </div>
+
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="hidden" style="flex-direction: column; align-items: center; justify-content: center; padding: 80px 0; gap: 12px; text-align: center;">
+        <span class="material-symbols-outlined text-gray-300 dark:text-gray-700" style="font-size: 48px;">shopping_basket</span>
+        <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">No orders found</p>
+        <p class="text-xs text-gray-400">Orders placed by customers will appear here in real-time.</p>
+    </div>
+
+    <!-- Orders Grid -->
+    <div id="orders-grid" class="orders-grid-layout">
+        <!-- Dynamic Cards Inserted Here -->
+    </div>
+</div>
+
+<script>
+    // State management
+    let orders = [];
+    let currentTab = 'all'; // all, active, ready, completed
+    let searchQuery = '';
+
+    // Fetch initial order list and setup interval polling
+    async function loadOrders() {
+        try {
+            const response = await fetch('/admin/order/order/api/list/');
+            if (!response.ok) throw new Error('Failed to fetch orders');
+            const data = await response.json();
+            orders = data.orders || [];
+            renderUI();
+        } catch (error) {
+            console.error('Error fetching orders:', error);
+        }
+    }
+
+    // Handle updates (status/prep time)
+    async function updateOrder(orderId, status, prepTime) {
+        try {
+            const payload = { order_id: orderId };
+            if (status) payload.status = status;
+            if (prepTime !== undefined) payload.prep_time = prepTime;
+
+            const response = await fetch('/admin/order/order/api/update/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error('Failed to update order');
+            
+            // Instantly update the local state for fluid UI transition
+            const orderIdx = orders.findIndex(o => o.id === orderId);
+            if (orderIdx !== -1) {
+                if (status) orders[orderIdx].status = status;
+                if (prepTime !== undefined) orders[orderIdx].prep_time = prepTime;
+            }
+            renderUI();
+        } catch (error) {
+            console.error('Error updating order:', error);
+            alert('Could not update order. Please try again.');
+        }
+    }
+
+    // Helper: format initials
+    function getInitials(first, last) {
+        const f = first ? first.charAt(0).toUpperCase() : '';
+        const l = last ? last.charAt(0).toUpperCase() : '';
+        return f + l || '?';
+    }
+
+    // Helper: format badge and status label
+    function getStatusDetails(status) {
+        const s = status.toUpperCase();
+        if (s === 'NEW' || s === 'PENDING') {
+            return { label: 'New', class: 'badge-new' };
+        } else if (s === 'ACCEPTED') {
+            return { label: 'Accepted', class: 'badge-new' };
+        } else if (s.startsWith('PREPARING')) {
+            return { label: 'Preparing', class: 'badge-preparing' };
+        } else if (s === 'READY') {
+            return { label: 'Ready', class: 'badge-ready' };
+        } else if (s === 'COMPLETED' || s === 'PICKED_UP' || s === 'DELIVERED') {
+            return { label: 'Completed', class: 'badge-completed' };
+        } else if (s === 'FAILED') {
+            return { label: 'Rejected', class: 'badge-failed' };
+        }
+        return { label: status, class: 'badge-completed' };
+    }
+
+    // Tab switcher
+    function selectTab(tabId) {
+        currentTab = tabId;
+        
+        // Update active tab styles
+        document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(`tab-${tabId}`).classList.add('active');
+
+        // Update main title
+        const titles = {
+            all: 'All Orders',
+            active: 'Active Orders',
+            ready: 'Ready for Pickup',
+            completed: 'Completed History'
+        };
+        document.getElementById('tab-title').textContent = titles[tabId] || 'Orders';
+
+        renderUI();
+    }
+
+    // Search input handler
+    function handleSearch(query) {
+        searchQuery = query.toLowerCase().trim();
+        renderUI();
+    }
+
+    // Main render function
+    function renderUI() {
+        const grid = document.getElementById('orders-grid');
+        const loading = document.getElementById('loading-state');
+        const empty = document.getElementById('empty-state');
+        const badge = document.getElementById('active-orders-count-badge');
+
+        loading.style.display = 'none';
+
+        // Filter active orders for badge count (NEW, ACCEPTED, PREPARING)
+        const activeOrdersCount = orders.filter(o => {
+            const s = o.status.toUpperCase();
+            return s === 'NEW' || s === 'ACCEPTED' || s.startsWith('PREPARING');
+        }).length;
+        badge.textContent = activeOrdersCount;
+
+        // Apply tab filters
+        let filtered = orders;
+        if (currentTab === 'active') {
+            filtered = orders.filter(o => {
+                const s = o.status.toUpperCase();
+                return s === 'NEW' || s === 'ACCEPTED' || s.startsWith('PREPARING');
+            });
+        } else if (currentTab === 'ready') {
+            filtered = orders.filter(o => o.status.toUpperCase() === 'READY');
+        } else if (currentTab === 'completed') {
+            filtered = orders.filter(o => {
+                const s = o.status.toUpperCase();
+                return s === 'COMPLETED' || s === 'PICKED_UP' || s === 'DELIVERED';
+            });
+        } else {
+            // "All" Tab: Show everything except PENDING (unpaid/noise)
+            filtered = orders.filter(o => o.status.toUpperCase() !== 'PENDING');
+        }
+
+        // Apply search query
+        if (searchQuery) {
+            filtered = filtered.filter(o => {
+                const fullName = `${o.first_name || ''} ${o.last_name || ''}`.toLowerCase();
+                const phone = (o.phone || '').toLowerCase();
+                const orderIdStr = (o.order_id || '').toLowerCase();
+                return fullName.includes(searchQuery) || phone.includes(searchQuery) || orderIdStr.includes(searchQuery);
+            });
+        }
+
+        if (filtered.length === 0) {
+            empty.style.display = 'flex';
+            grid.innerHTML = '';
+            return;
+        }
+
+        empty.style.display = 'none';
+
+        grid.innerHTML = filtered.map(order => {
+            const statusUpper = order.status.toUpperCase();
+            const isNew = statusUpper === 'NEW';
+            const isAccepted = statusUpper === 'ACCEPTED';
+            const isPreparing = statusUpper.startsWith('PREPARING');
+            const isReady = statusUpper === 'READY';
+            const isCompleted = statusUpper === 'COMPLETED' || statusUpper === 'PICKED_UP' || statusUpper === 'DELIVERED';
+            const isFailed = statusUpper === 'FAILED';
+            
+            const statusDetails = getStatusDetails(order.status);
+            const initials = getInitials(order.first_name, order.last_name);
+            const formattedTotal = parseFloat(order.total_amount).toFixed(2);
+            
+            // Format order ID display
+            const orderLabel = order.order_id ? `Order #${order.order_id.split('-').pop()}` : `Order #${order.id.substring(0, 4)}`;
+
+            // Build items markup
+            const itemsMarkup = order.items.map(item => `
+                <div class="item-row">
+                    <div class="flex-center">
+                        <span style="color: #f97316; font-weight: 800; font-size: 0.8rem;">x${item.quantity}</span>
+                        <span style="font-weight: 500; opacity: 0.9;">${item.name}</span>
+                    </div>
+                    <span style="font-weight: 700;">$${parseFloat(item.total).toFixed(2)}</span>
+                </div>
+            `).join('');
+
+            // Build prep time selector (Only visible if status is ACCEPTED, or PREPARING)
+            let prepTimeSectionMarkup = '';
+            if (isAccepted || isPreparing) {
+                const prepTimes = [5, 15, 30, 45];
+                const prepButtonsMarkup = prepTimes.map(t => {
+                    const isActive = (order.prep_time === t) ? 'active' : '';
+                    // Disable choice if already in preparing stage (they chose it to start preparing)
+                    const isDisabled = isPreparing ? 'disabled style="pointer-events: none; opacity: 0.6;"' : '';
+                    return `<button class="prep-btn ${isActive}" ${isDisabled} onclick="updateOrder('${order.id}', 'PREPARING-${t}', ${t})">${t}m</button>`;
+                }).join('');
+
+                prepTimeSectionMarkup = `
+                    <div class="prep-time-row">
+                        <span style="font-size: 0.725rem; font-weight: 800; opacity: 0.7;">Prep Time:</span>
+                        <div style="display: flex; gap: 6px;">
+                            ${prepButtonsMarkup}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Build action buttons for multi-step flow
+            let actionMarkup = '';
+            if (isNew) {
+                // Step 1: Accept or Reject
+                actionMarkup = `
+                    <div style="display: flex; gap: 10px; width: 100%;">
+                        <button class="action-btn-outline reject-btn" onclick="updateOrder('${order.id}', 'FAILED')">Reject</button>
+                        <button class="action-btn-solid" onclick="updateOrder('${order.id}', 'ACCEPTED')">Accept</button>
+                    </div>
+                `;
+            } else if (isAccepted) {
+                // Step 2: Accepted. User can click a prep time button directly or start with 15m default
+                actionMarkup = `
+                    <button class="action-btn-solid" onclick="updateOrder('${order.id}', 'PREPARING-15', 15)">Start Preparing (15m)</button>
+                `;
+            } else if (isPreparing) {
+                // Step 3: Preparing. Click to Mark as Ready
+                actionMarkup = `
+                    <button class="action-btn-outline" onclick="updateOrder('${order.id}', 'READY')">Mark as Ready</button>
+                `;
+            } else if (isReady) {
+                // Step 4: Ready. Show Ready banner + Complete action
+                actionMarkup = `
+                    <div style="display: flex; flex-direction: column;">
+                        <div class="ready-banner">
+                            Customer is notified, Food is ready for pickup
+                        </div>
+                        <button class="action-btn-solid" onclick="updateOrder('${order.id}', 'COMPLETED')">Order Completed</button>
+                    </div>
+                `;
+            } else if (isFailed) {
+                // Rejected Order: show Stripe refund link if present
+                if (order.stripe_refund_link) {
+                    actionMarkup = `
+                        <div style="display: flex; flex-direction: column;">
+                            <div class="refund-banner">
+                                Order Rejected. Refund balance to customer:
+                            </div>
+                            <a href="${order.stripe_refund_link}" target="_blank" class="action-btn-solid refund-btn" style="text-decoration: none;">Refund in Stripe ↗</a>
+                        </div>
+                    `;
+                } else {
+                    actionMarkup = `
+                        <div class="flex-center" style="justify-content: center; padding: 4px 0; color: #ef4444; font-size: 0.8rem; font-weight: 600;">
+                            <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px;">cancel</span>
+                            Order Rejected
+                        </div>
+                    `;
+                }
+            } else {
+                // Completed State
+                actionMarkup = `
+                    <div class="flex-center" style="justify-content: center; padding: 4px 0; color: #94a3b8; font-size: 0.8rem; font-weight: 600;">
+                        <span class="material-symbols-outlined" style="font-size: 16px; color: #10b981; margin-right: 4px;">check_circle</span>
+                        Order Completed
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="order-card" id="card-${order.id}">
+                    <!-- Card Top Header -->
+                    <div class="card-header-row">
+                        <h3 style="font-weight: 700; font-size: 1.125rem; margin: 0; color: #111827;" class="dark:text-white">
+                            ${orderLabel}
+                        </h3>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="status-badge ${statusDetails.class}">
+                                ${statusDetails.label}
+                            </span>
+                            <a href="/admin/order/order/${order.id}/change/" class="card-detail-btn" title="View Details">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">visibility</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Customer Info -->
+                    <div class="customer-row">
+                        <div class="initials-avatar">
+                            ${initials}
+                        </div>
+                        <div>
+                            <h4 style="font-weight: 700; font-size: 0.875rem; margin: 0; color: #111827;" class="dark:text-white">
+                                ${order.first_name || ''} ${order.last_name || ''}
+                            </h4>
+                            <p style="font-size: 0.725rem; font-weight: 500; color: #94a3b8; margin: 2px 0 0 0;">
+                                ${order.phone || 'No phone number'}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Food Items -->
+                    <div class="items-container">
+                        ${itemsMarkup}
+                    </div>
+
+                    <!-- Prep Time Selection -->
+                    ${prepTimeSectionMarkup}
+
+                    <!-- Action Button/Banner -->
+                    <div style="margin-top: 4px;">
+                        ${actionMarkup}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Clock updates
+    function updateClock() {
+        const clockEl = document.getElementById('live-clock');
+        if (!clockEl) return;
+        const now = new Date();
+        let hours = now.getHours();
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'Pm' : 'Am';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        const hoursStr = String(hours).padStart(2, '0');
+        clockEl.textContent = `${hoursStr}:${minutes} ${ampm}`;
+    }
+
+    // Init page
+    window.addEventListener('DOMContentLoaded', () => {
+        loadOrders();
+        updateClock();
+        setInterval(updateClock, 1000);
+        
+        // Poll orders list every 4 seconds
+        setInterval(loadOrders, 4000);
+    });
+</script>
+{% endblock %}

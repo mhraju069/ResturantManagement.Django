@@ -30,7 +30,7 @@ def order_status_changed(sender, instance, created, **kwargs):
 
     # Case 2: Order status changes from admin panel or API
     elif old_status is not None and old_status != new_status:
-        if new_status in ['ACCEPTED', 'PREPARING', 'READY', 'PICKED_UP', 'COMPLETED']:
+        if new_status in ['ACCEPTED', 'READY', 'PICKED_UP', 'COMPLETED'] or new_status.startswith('PREPARING'):
             notify_user_order_status(instance)
         if new_status == 'READY':
             send_order_ready_email(instance)
