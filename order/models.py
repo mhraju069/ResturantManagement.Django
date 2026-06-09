@@ -23,6 +23,8 @@ class Order(models.Model):
         ('PICKED_UP', 'Picked Up'),
         ('COMPLETED', 'Completed'),
         ('FAILED', 'Failed'),
+        ('REJECTED', 'Rejected'),
+        ('REFUNDED', 'Refunded'),
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order_id = models.CharField(max_length=50, verbose_name="Order ID", blank=True, null=True, unique=True)
@@ -36,8 +38,8 @@ class Order(models.Model):
     city = models.CharField(max_length=50, verbose_name="City")
     state = models.CharField(max_length=50, verbose_name="State")
     zip_code = models.CharField(max_length=6, verbose_name="Zip Code")
-    property = models.BooleanField(default=False, help_text="Mark as Property")
     prep_time = models.IntegerField(blank=True, null=True, verbose_name="Prep Time (minutes)")
+    is_priority = models.BooleanField(default=False, verbose_name="Is Priority")
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)

@@ -280,6 +280,24 @@
         background: rgba(239, 68, 68, 0.12);
         color: #f87171;
     }
+
+    .badge-rejected {
+        background: #fef2f2;
+        color: #ef4444;
+    }
+    .dark .badge-rejected {
+        background: rgba(239, 68, 68, 0.12);
+        color: #f87171;
+    }
+
+    .badge-refunded {
+        background: #f5f3ff;
+        color: #7c3aed;
+    }
+    .dark .badge-refunded {
+        background: rgba(124, 58, 237, 0.12);
+        color: #a78bfa;
+    }
     
     /* Customer Row */
     .customer-row {
@@ -419,12 +437,12 @@
     }
     
     .action-btn-solid.refund-btn {
-        background: #6366f1;
-        border-color: #6366f1;
+        background: #7c3aed;
+        border-color: #7c3aed;
     }
     .action-btn-solid.refund-btn:hover {
-        background: #4f46e5;
-        border-color: #4f46e5;
+        background: #6d28d9;
+        border-color: #6d28d9;
     }
 
     /* Banners */
@@ -511,6 +529,39 @@
         align-items: center;
         gap: 6px;
     }
+
+    /* Priority Toggle button & star */
+    .priority-btn {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        outline: none;
+        transition: transform 0.15s ease;
+    }
+    .priority-btn:hover {
+        transform: scale(1.2);
+    }
+    .priority-star {
+        font-variation-settings: 'FILL' 0, 'wght' 400;
+        color: #94a3b8;
+        transition: color 0.15s ease, font-variation-settings 0.15s ease;
+    }
+    .priority-star.active {
+        font-variation-settings: 'FILL' 1, 'wght' 600;
+        color: #f97316 !important;
+    }
+    .priority-star:hover {
+        color: #f97316;
+    }
+
+    .dark select option {
+        background-color: #1f2937;
+        color: #f9fafb;
+    }
 </style>
 
 <div class="kitchen-body">
@@ -559,10 +610,22 @@
             <a onclick="selectTab('completed')" id="tab-completed" class="tab-item">Completed</a>
         </div>
 
-        <!-- Search Box -->
-        <div class="search-container">
-            <span class="material-symbols-outlined search-icon">search</span>
-            <input type="text" id="search-query" oninput="handleSearch(this.value)" placeholder="Search customer, ID..." class="search-input">
+        <!-- Search & Sort Controls -->
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <!-- Sort Dropdown -->
+            <div class="flex-center">
+                <select id="sort-selector" onchange="handleSort(this.value)" class="search-input" style="width: 140px; padding: 7px 10px; background: transparent; cursor: pointer; border-radius: 8px;">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="priority">Priority First</option>
+                </select>
+            </div>
+
+            <!-- Search Box -->
+            <div class="search-container">
+                <span class="material-symbols-outlined search-icon" style="font-size: 16px;">search</span>
+                <input type="text" id="search-query" oninput="handleSearch(this.value)" placeholder="Search customer, ID..." class="search-input">
+            </div>
         </div>
     </div>
 
@@ -602,6 +665,7 @@
     let orders = [];
     let currentTab = 'all'; // all, active, ready, completed
     let searchQuery = '';
+    let sortBy = 'newest'; // newest, oldest, priority
 
     // Fetch initial order list and setup interval polling
     async function loadOrders() {
@@ -616,12 +680,13 @@
         }
     }
 
-    // Handle updates (status/prep time)
-    async function updateOrder(orderId, status, prepTime) {
+    // Handle updates (status/prep time/priority)
+    async function updateOrder(orderId, status, prepTime, isPriority) {
         try {
             const payload = { order_id: orderId };
             if (status) payload.status = status;
             if (prepTime !== undefined) payload.prep_time = prepTime;
+            if (isPriority !== undefined) payload.is_priority = isPriority;
 
             const response = await fetch('/admin/order/order/api/update/', {
                 method: 'POST',
@@ -639,12 +704,32 @@
             if (orderIdx !== -1) {
                 if (status) orders[orderIdx].status = status;
                 if (prepTime !== undefined) orders[orderIdx].prep_time = prepTime;
+                if (isPriority !== undefined) orders[orderIdx].is_priority = isPriority;
             }
             renderUI();
         } catch (error) {
             console.error('Error updating order:', error);
             alert('Could not update order. Please try again.');
         }
+    }
+
+    // Toggle priority handler
+    async function togglePriority(orderId, currentPriority) {
+        await updateOrder(orderId, null, undefined, !currentPriority);
+    }
+
+    // Sort selector handler
+    function handleSort(val) {
+        sortBy = val;
+        renderUI();
+    }
+
+    // Refund button handler: opens Stripe refund page and sets status to REFUNDED
+    async function handleRefund(orderId, refundUrl) {
+        if (refundUrl) {
+            window.open(refundUrl, '_blank');
+        }
+        await updateOrder(orderId, 'REFUNDED');
     }
 
     // Helper: format initials
@@ -668,7 +753,11 @@
         } else if (s === 'COMPLETED' || s === 'PICKED_UP' || s === 'DELIVERED') {
             return { label: 'Completed', class: 'badge-completed' };
         } else if (s === 'FAILED') {
-            return { label: 'Rejected', class: 'badge-failed' };
+            return { label: 'Failed', class: 'badge-failed' };
+        } else if (s === 'REJECTED') {
+            return { label: 'Rejected', class: 'badge-rejected' };
+        } else if (s === 'REFUNDED') {
+            return { label: 'Refunded', class: 'badge-refunded' };
         }
         return { label: status, class: 'badge-completed' };
     }
@@ -744,6 +833,19 @@
             });
         }
 
+        // Apply sorting (newest, oldest, priority)
+        if (sortBy === 'newest') {
+            filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        } else if (sortBy === 'oldest') {
+            filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        } else if (sortBy === 'priority') {
+            filtered.sort((a, b) => {
+                if (a.is_priority && !b.is_priority) return -1;
+                if (!a.is_priority && b.is_priority) return 1;
+                return new Date(b.created_at) - new Date(a.created_at);
+            });
+        }
+
         if (filtered.length === 0) {
             empty.style.display = 'flex';
             grid.innerHTML = '';
@@ -760,6 +862,8 @@
             const isReady = statusUpper === 'READY';
             const isCompleted = statusUpper === 'COMPLETED' || statusUpper === 'PICKED_UP' || statusUpper === 'DELIVERED';
             const isFailed = statusUpper === 'FAILED';
+            const isRejected = statusUpper === 'REJECTED';
+            const isRefunded = statusUpper === 'REFUNDED';
             
             const statusDetails = getStatusDetails(order.status);
             const initials = getInitials(order.first_name, order.last_name);
@@ -803,10 +907,10 @@
             // Build action buttons for multi-step flow
             let actionMarkup = '';
             if (isNew) {
-                // Step 1: Accept or Reject
+                // Step 1: Accept or Reject (Status becomes REJECTED)
                 actionMarkup = `
                     <div style="display: flex; gap: 10px; width: 100%;">
-                        <button class="action-btn-outline reject-btn" onclick="updateOrder('${order.id}', 'FAILED')">Reject</button>
+                        <button class="action-btn-outline reject-btn" onclick="updateOrder('${order.id}', 'REJECTED')">Reject</button>
                         <button class="action-btn-solid" onclick="updateOrder('${order.id}', 'ACCEPTED')">Accept</button>
                     </div>
                 `;
@@ -830,13 +934,31 @@
                         <button class="action-btn-solid" onclick="updateOrder('${order.id}', 'COMPLETED')">Order Completed</button>
                     </div>
                 `;
+            } else if (isRejected) {
+                // Rejected state: show Refund button
+                actionMarkup = `
+                    <div style="display: flex; flex-direction: column;">
+                        <div class="refund-banner" style="background: #fff5f5; color: #c53030;">
+                            Order Rejected. Refund balance to customer:
+                        </div>
+                        <button class="action-btn-solid refund-btn" onclick="handleRefund('${order.id}', '${order.stripe_refund_link || ''}')">Refund in Stripe</button>
+                    </div>
+                `;
+            } else if (isRefunded) {
+                // Refunded state: show Refunded tag
+                actionMarkup = `
+                    <div class="flex-center" style="justify-content: center; padding: 4px 0; color: #7c3aed; font-size: 0.8rem; font-weight: 600;">
+                        <span class="material-symbols-outlined" style="font-size: 16px; color: #7c3aed; margin-right: 4px;">restore_from_trash</span>
+                        Order Refunded
+                    </div>
+                `;
             } else if (isFailed) {
-                // Rejected Order: show Stripe refund link if present
+                // Failed/Rejected Order fallback: show Stripe refund link if present
                 if (order.stripe_refund_link) {
                     actionMarkup = `
                         <div style="display: flex; flex-direction: column;">
                             <div class="refund-banner">
-                                Order Rejected. Refund balance to customer:
+                                Order Failed. Refund balance to customer:
                             </div>
                             <a href="${order.stripe_refund_link}" target="_blank" class="action-btn-solid refund-btn" style="text-decoration: none;">Refund in Stripe ↗</a>
                         </div>
@@ -845,7 +967,7 @@
                     actionMarkup = `
                         <div class="flex-center" style="justify-content: center; padding: 4px 0; color: #ef4444; font-size: 0.8rem; font-weight: 600;">
                             <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px;">cancel</span>
-                            Order Rejected
+                            Order Failed
                         </div>
                     `;
                 }
@@ -863,9 +985,14 @@
                 <div class="order-card" id="card-${order.id}">
                     <!-- Card Top Header -->
                     <div class="card-header-row">
-                        <h3 style="font-weight: 700; font-size: 1.125rem; margin: 0; color: #111827;" class="dark:text-white">
-                            ${orderLabel}
-                        </h3>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <h3 style="font-weight: 700; font-size: 1.125rem; margin: 0; color: #111827;" class="dark:text-white">
+                                ${orderLabel}
+                            </h3>
+                            <button class="priority-btn" onclick="togglePriority('${order.id}', ${order.is_priority})" title="Toggle Priority">
+                                <span class="material-symbols-outlined priority-star ${order.is_priority ? 'active' : ''}" style="font-size: 20px;">star</span>
+                            </button>
+                        </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span class="status-badge ${statusDetails.class}">
                                 ${statusDetails.label}
@@ -912,14 +1039,19 @@
     function updateClock() {
         const clockEl = document.getElementById('live-clock');
         if (!clockEl) return;
-        const now = new Date();
-        let hours = now.getHours();
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const ampm = hours >= 12 ? 'Pm' : 'Am';
-        hours = hours % 12;
-        hours = hours ? hours : 12;
-        const hoursStr = String(hours).padStart(2, '0');
-        clockEl.textContent = `${hoursStr}:${minutes} ${ampm}`;
+        
+        const options = {
+            timeZone: 'Europe/Zagreb',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        };
+        
+        // Fetch timezone time and normalize whitespace (handles standard & narrow spaces)
+        const croatianTimeStr = new Date().toLocaleTimeString('en-US', options).replace(/\s+/g, ' ');
+        let [time, ampm] = croatianTimeStr.split(' ');
+        let formattedAmpm = ampm ? ampm.charAt(0).toUpperCase() + ampm.slice(1).toLowerCase() : '';
+        clockEl.textContent = `${time} ${formattedAmpm}`;
     }
 
     // Init page
