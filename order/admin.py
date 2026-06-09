@@ -10,8 +10,8 @@ class OrderItemInline(TabularInline):
 class OrderAdmin(ModelAdmin):
     change_list_template = 'admin/order/order/change_list.html'
     
-    list_display = ('order_id', 'user_name_display', 'phone', 'food_items_display', 'total_amount', 'status', 'property', 'created_at','updated_at')
-    list_filter = ('status', 'created_at','property','updated_at')
+    list_display = ('order_id', 'user_name_display', 'phone', 'food_items_display', 'total_amount', 'status', 'created_at','updated_at')
+    list_filter = ('status', 'created_at','updated_at')
     search_fields = ('order_id', 'user__email', 'first_name', 'last_name')
     ordering = ('-created_at',)
     list_display_links = ('order_id', 'user_name_display')
@@ -54,6 +54,7 @@ class OrderAdmin(ModelAdmin):
                 'phone': o.phone,
                 'status': o.status,
                 'prep_time': o.prep_time,
+                'is_priority': o.is_priority,
                 'total_amount': float(o.total_amount),
                 'created_at_time': o.created_at.strftime('%I:%M %p') if o.created_at else '',
                 'created_at': o.created_at.isoformat() if o.created_at else '',
@@ -72,17 +73,21 @@ class OrderAdmin(ModelAdmin):
             order_id = payload.get('order_id')
             status = payload.get('status')
             prep_time = payload.get('prep_time')
+            is_priority = payload.get('is_priority')
             
             order = Order.objects.get(id=order_id)
             if status:
                 order.status = status
             if prep_time is not None:
                 order.prep_time = prep_time
+            if is_priority is not None:
+                order.is_priority = is_priority
             order.save()
             return JsonResponse({
                 'status': 'success', 
                 'order_status': order.status, 
-                'prep_time': order.prep_time
+                'prep_time': order.prep_time,
+                'is_priority': order.is_priority
             })
         except Order.DoesNotExist:
             return JsonResponse({'error': 'Order not found'}, status=404)
@@ -90,7 +95,7 @@ class OrderAdmin(ModelAdmin):
             return JsonResponse({'error': str(e)}, status=400)
     fieldsets = (
         (None, {
-            'fields': ('order_id', 'user', ('property', 'status'), 'created_at', 'updated_at')
+            'fields': ('order_id', 'user', 'status', 'created_at', 'updated_at')
         }),
         ('Customer Info', {
             'fields': ('first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zip_code')
