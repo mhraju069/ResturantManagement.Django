@@ -4,6 +4,7 @@ from .serializers import *
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from config.perm import IsBusinessOwner
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
@@ -113,3 +114,11 @@ class GetProfileView(APIView):
         user = UserProfileSerializer(request.user,context={"request": request}).data
         return Response({"status": True, "data": user}, status=200)
 
+
+
+class BusinessProfileRetrieveUpdateView(generics.RetrieveUpdateAPIView):
+    serializer_class = BusinessProfileSerializer
+    permission_classes = [permissions.IsAuthenticated, IsBusinessOwner]
+    def get_object(self):
+        profile, created = BusinessProfile.objects.get_or_create(user=self.request.user)
+        return profile

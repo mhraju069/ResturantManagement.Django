@@ -1,4 +1,4 @@
-from .models import User
+from .models import User, BusinessProfile
 from rest_framework import serializers
 from .helper import verify_otp,send_otp
 from django.utils.translation import gettext_lazy as _
@@ -134,3 +134,12 @@ class ResetPasswordSerializer(serializers.Serializer):
         user.set_password(new_password)
         user.save()
         return {"status": True, "message": _("Password reset successfully")}
+
+
+
+class BusinessProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BusinessProfile
+        exclude = ['created_at', 'updated_at']
+        read_only_fields = ['user']
+    

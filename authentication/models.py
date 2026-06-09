@@ -35,7 +35,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    ROLE = (('user', 'User'),('admin', 'Admin'),)
+    ROLE = (('user', 'User'),('business_owner', 'Business Owner'), ('admin', 'Admin'),)
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(max_length=255,unique=True,verbose_name="User Email")
@@ -44,7 +44,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     phone = models.CharField(max_length=15, unique=True, verbose_name="Phone Number", null=True, blank=True)
     image = models.ImageField(upload_to='profile_images/', blank=True, null=True,)
     address = models.CharField(max_length=200, blank=True, null=True,verbose_name="Address")
-    role = models.CharField(max_length=10, choices=ROLE, default='user',verbose_name="User Role")
+    role = models.CharField(max_length=20, choices=ROLE, default='user',verbose_name="User Role")
     is_active = models.BooleanField(default=False,verbose_name="Active User")
     is_staff = models.BooleanField(default=False,verbose_name="Staff User")
     is_superuser = models.BooleanField(default=False,verbose_name="Super User")
@@ -82,6 +82,33 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.role == 'admin'
 
 
+
+
+class BusinessProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, related_name='business_profile', on_delete=models.CASCADE)
+    name = models.CharField(max_length=200, blank=True, null=True,verbose_name="Business Name")
+    logo = models.ImageField(upload_to='business_logos/', blank=True, null=True,)
+    location = models.CharField(max_length=200, blank=True, null=True,verbose_name="Business Address")
+    country = models.CharField(max_length=200, blank=True, null=True,verbose_name="Business Country")
+    street = models.CharField(max_length=200, blank=True, null=True,verbose_name="Business State")
+    city = models.CharField(max_length=200, blank=True, null=True,verbose_name="Business City")
+    tax_id = models.CharField(max_length=200, blank=True, null=True,verbose_name="Tax ID/OIB")
+    zip_code = models.CharField(max_length=200, blank=True, null=True,verbose_name="Business Zip Code")
+    contact_person = models.CharField(max_length=200, blank=True, null=True,verbose_name="Business Contact Person")
+    contact_number = models.CharField(max_length=200, blank=True, null=True,verbose_name="Business Contact Number")
+    contact_email = models.CharField(max_length=200, blank=True, null=True,verbose_name="Business Contact Email")
+    website = models.CharField(max_length=200, blank=True, null=True,verbose_name="Business Website")
+    description = models.TextField(blank=True, null=True,verbose_name="Business Description")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Business Joining Date")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Business Updated Date")
+
+    def __str__(self):
+        return self.name or f"Business Profile for {self.user.email}"
+
+    class Meta:
+        verbose_name = 'Business Profile'
+        verbose_name_plural = 'Business Profiles'
+        ordering = ['-created_at']
 
 
 class OTP(models.Model):
