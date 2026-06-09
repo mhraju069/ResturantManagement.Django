@@ -26,6 +26,7 @@ class SignUpSerializer(serializers.ModelSerializer):
             last_name=validated_data.get('last_name', ''),
             address=validated_data.get('address', ''),
             phone=validated_data.get('phone', ''),
+            role=validated_data.get('role', 'user'),
             password=validated_data['password']
         )
         return user
