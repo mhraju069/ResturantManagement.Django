@@ -13,8 +13,18 @@ def send_otp(email, task="verification"):
         email_from = settings.EMAIL_HOST_USER
         recipient_list = [email]
         
-        send_mail(subject, message, email_from, recipient_list)
-        
+        print("Before send_mail")
+
+        result = send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+
+        print("After send_mail:", result)
+                
         return {"status": True, "log": f"OTP sent successfully to {email}"}
     except User.DoesNotExist:
         return {"status": False, "log": "User with this email does not exist."}
