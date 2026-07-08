@@ -1,6 +1,7 @@
 from django.utils import timezone
 from .models import OTP, User
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 from django.conf import settings
 
 def send_otp(email, task="verification"):
@@ -9,19 +10,22 @@ def send_otp(email, task="verification"):
         otp_obj = OTP.generate_otp(user)
         
         subject = f"Your OTP for {task}"
-        message = f"Your OTP code is {otp_obj.otp}. It will expire in 3 minutes."
-        email_from = settings.EMAIL_HOST_USER
-        recipient_list = [email]
+        
+        # Render the HTML OTP template with context
+        context = {'otp': otp_obj.otp}
+        html_content = render_to_string('emails/otp.html', context)
+        text_content = f"Your OTP code is {otp_obj.otp}. It will expire in 3 minutes."
         
         print("Before send_mail")
 
-        result = send_mail(
+        email_message = EmailMultiAlternatives(
             subject,
-            message,
+            text_content,
             settings.DEFAULT_FROM_EMAIL,
             [user.email],
-            fail_silently=False,
         )
+        email_message.attach_alternative(html_content, "text/html")
+        result = email_message.send(fail_silently=False)
 
         print("After send_mail:", result)
                 
