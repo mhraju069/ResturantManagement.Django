@@ -59,7 +59,7 @@ class ProductCartSerializer(serializers.ModelSerializer):
             return None
             
         try:
-            coupon_obj = Coupon.objects.get(code=coupon_code, active=True)
+            coupon_obj = Coupon.objects.get(code__iexact=coupon_code, active=True)
             return CouponSerializer(coupon_obj).data
         except Coupon.DoesNotExist:
             return None
