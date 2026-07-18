@@ -182,6 +182,9 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30)
 }
 
+# 100 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024 
+FILE_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024 
 
 EMAIL_BACKEND = 'config.email_backend.BrevoEmailBackend'
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
